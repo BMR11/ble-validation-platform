@@ -128,6 +128,7 @@
           "properties": ["read", "notify"],
           "permissions": ["readable"],
           "value": { "type": "uint8", "initial": 50 },
+          "valueGenerator": "batteryDecrement",
           "ui": {
             "label": "Battery",
             "unit": "%",

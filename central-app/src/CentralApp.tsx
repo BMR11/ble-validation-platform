@@ -36,6 +36,20 @@ function parseHeartRateBytes(bytes: number[]): string {
   return `${bpm} BPM`;
 }
 
+/** Nordic LBS button characteristic: 0 = released, 1 = pressed, 255 = error state in profile. */
+function formatLbsButtonState(byte: number): string {
+  if (byte === 0) {
+    return 'Released';
+  }
+  if (byte === 1) {
+    return 'Pressed';
+  }
+  if (byte === 255) {
+    return 'Error';
+  }
+  return `Other (${byte})`;
+}
+
 async function requestAndroidBle(): Promise<boolean> {
   if (Platform.OS !== 'android') {
     return true;
@@ -175,8 +189,9 @@ export default function CentralApp() {
       }
       if (lbs && normUuid(lbs.button) === ch) {
         const v = e.value[0] ?? 0;
-        setButtonLine(String(v));
-        addLog('data', `Notify button: ${v}`);
+        const line = formatLbsButtonState(v);
+        setButtonLine(line);
+        addLog('data', `Notify button: ${line}`);
       }
     });
     return () => sub.remove();
@@ -297,6 +312,16 @@ export default function CentralApp() {
         bat.service,
         bat.level
       );
+      try {
+        const batBytes = await BleManager.read(
+          peripheralId,
+          bat.service,
+          bat.level
+        );
+        setBatteryLine(`${batBytes[0] ?? 0}%`);
+      } catch {
+        /* optional */
+      }
       addLog('info', 'Subscribed: button + battery notifications');
     },
     [addLog]

@@ -36,6 +36,40 @@ import type {
 import type { LogEntry } from './types/log';
 import { appStyles } from './styles/appStyles';
 import { DebugLogPanel } from './components/DebugLogPanel';
+import { LBS_LED_CHAR_UUID } from './constants/bleUuids';
+
+/** Unicode U+1F4A1 (electric light bulb) — dims via opacity when LED off, glow when on */
+const BULB_EMOJI = '\u{1F4A1}';
+
+function normUuid(u: string): string {
+  return u.replace(/-/g, '').toLowerCase();
+}
+
+function isLedCharacteristic(char: ProfileCharacteristic): boolean {
+  return normUuid(char.uuid) === normUuid(LBS_LED_CHAR_UUID);
+}
+
+function ledLitFromDisplay(
+  displayValue: unknown,
+  fallbackNumeric: number
+): boolean {
+  if (typeof displayValue === 'boolean') {
+    return displayValue;
+  }
+  if (typeof displayValue === 'number') {
+    return displayValue !== 0;
+  }
+  if (typeof displayValue === 'string') {
+    const s = displayValue.toLowerCase();
+    if (s === 'false' || s === '0') {
+      return false;
+    }
+    if (s === 'true' || s === '1') {
+      return true;
+    }
+  }
+  return fallbackNumeric !== 0;
+}
 
 export default function ProfileApp() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -253,7 +287,7 @@ export default function ProfileApp() {
 
     return (
       <View key={char.uuid} style={styles.charControl}>
-        {renderControl(char.ui, numericValue, serviceUUID, char.uuid)}
+        {renderControl(char.ui, numericValue, serviceUUID, char.uuid, char)}
       </View>
     );
   };
@@ -262,7 +296,8 @@ export default function ProfileApp() {
     ui: UiHint,
     value: number,
     serviceUUID: string,
-    charUUID: string
+    charUUID: string,
+    char: ProfileCharacteristic
   ) => {
     switch (ui.control) {
       case 'stepper':
@@ -272,7 +307,7 @@ export default function ProfileApp() {
       case 'toggle':
         return renderToggle(ui, value, serviceUUID, charUUID);
       case 'readonly':
-        return renderReadonly(ui, value);
+        return renderReadonly(ui, value, char);
       default:
         return null;
     }
@@ -441,14 +476,36 @@ export default function ProfileApp() {
     );
   };
 
-  const renderReadonly = (ui: UiHint, value: number) => {
-    const writeKey = activeProfile?.services
-      .flatMap((s) => s.characteristics)
-      .find((c) => c.ui === ui)?.onWrite?.stateKey;
-
+  const renderReadonly = (ui: UiHint, value: number, char: ProfileCharacteristic) => {
+    const writeKey = char.onWrite?.stateKey;
     const displayValue = writeKey
       ? writeStateMap.get(writeKey)
       : value;
+
+    if (isLedCharacteristic(char)) {
+      const lit = ledLitFromDisplay(displayValue, value);
+      return (
+        <View>
+          <Text style={styles.controlLabel}>{ui.label}</Text>
+          <View style={styles.ledRow}>
+            <Text
+              style={[
+                styles.ledEmoji,
+                lit ? styles.ledEmojiOn : styles.ledEmojiOff,
+              ]}
+              accessibilityLabel={lit ? 'LED on' : 'LED dim'}
+            >
+              {BULB_EMOJI}
+            </Text>
+            <Text
+              style={[styles.ledVerbal, lit ? styles.ledVerbalOn : styles.ledVerbalOff]}
+            >
+              {lit ? 'On' : 'Dim'}
+            </Text>
+          </View>
+        </View>
+      );
+    }
 
     return (
       <View>
@@ -851,5 +908,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     fontVariant: ['tabular-nums'],
+  },
+  ledRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 4,
+  },
+  ledEmoji: {
+    fontSize: 44,
+    lineHeight: 50,
+  },
+  ledEmojiOff: {
+    opacity: 0.2,
+  },
+  ledEmojiOn: {
+    opacity: 1,
+    textShadowColor: '#e8c040',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 16,
+  },
+  ledVerbal: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  ledVerbalOff: {
+    color: '#6b7280',
+  },
+  ledVerbalOn: {
+    color: '#e8d089',
   },
 });
