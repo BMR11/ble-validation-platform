@@ -1,4 +1,4 @@
-package bleperipheralmanager.example
+package com.bleperipheraldemo
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -11,10 +11,10 @@ class MainActivity : ReactActivity() {
    * Returns the name of the main component registered from JavaScript. This is used to schedule
    * rendering of the component.
    */
-  override fun getMainComponentName(): String = "BlePeripheralManagerExample"
+  override fun getMainComponentName(): String = "BlePeripheralDemo"
 
   /**
-   * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
+   * Returns the instance of the [ReactActivityDelegate]. We use the [DefaultReactActivityDelegate]
    * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
    */
   override fun createReactActivityDelegate(): ReactActivityDelegate =

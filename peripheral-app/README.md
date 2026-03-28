@@ -128,6 +128,6 @@ To try a generic broadcast from the repo root (scripts live in `example/scripts/
 yarn send-broadcast
 ```
 
-This uses action `com.bleperipheralmanager.example.CUSTOM_COMMAND`. Your own app should register the same action string (or any custom action) in JS and handle extras as needed.
+This uses action `com.bleperipheraldemo.CUSTOM_COMMAND`. Your own app should register the same action string (or any custom action) in JS and handle extras as needed.
 
 See [Android broadcast intents](../docs/guides/android-broadcast-intents.md) for API details.

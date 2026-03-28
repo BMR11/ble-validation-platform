@@ -7,7 +7,7 @@
 MESSAGE="${1:-helloWorld}"
 
 # Must match registerBroadcastReceiver in your app (see example/src/App.tsx / send-broadcast.js)
-ACTION="com.bleperipheralmanager.example.CUSTOM_COMMAND"
+ACTION="com.bleperipheraldemo.CUSTOM_COMMAND"
 
 echo "📡 Sending broadcast intent..."
 echo "   Action: $ACTION"

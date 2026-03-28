@@ -8,23 +8,23 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		1490A57E42BF353705B56A35 /* Pods_BlePeripheralManagerExample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C90F54E38D776CD4AD1F499 /* Pods_BlePeripheralManagerExample.framework */; };
+		1490A57E42BF353705B56A35 /* Pods_BlePeripheralDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C90F54E38D776CD4AD1F499 /* Pods_BlePeripheralDemo.framework */; };
 		1EBF736B1281349857BE4DCA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		13B07F961A680F5B00A75B9A /* BlePeripheralManagerExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlePeripheralManagerExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = BlePeripheralManagerExample/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = BlePeripheralManagerExample/Info.plist; sourceTree = "<group>"; };
-		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = BlePeripheralManagerExample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		3B4392A12AC88292D35C810B /* Pods-BlePeripheralManagerExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BlePeripheralManagerExample.debug.xcconfig"; path = "Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample.debug.xcconfig"; sourceTree = "<group>"; };
-		3C90F54E38D776CD4AD1F499 /* Pods_BlePeripheralManagerExample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BlePeripheralManagerExample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		5709B34CF0A7D63546082F79 /* Pods-BlePeripheralManagerExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BlePeripheralManagerExample.release.xcconfig"; path = "Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample.release.xcconfig"; sourceTree = "<group>"; };
-		587E6F862E582E9C0036AC17 /* BlePeripheralManagerExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = BlePeripheralManagerExample.entitlements; path = BlePeripheralManagerExample/BlePeripheralManagerExample.entitlements; sourceTree = "<group>"; };
-		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = BlePeripheralManagerExample/AppDelegate.swift; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = BlePeripheralManagerExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* BlePeripheralDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlePeripheralDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = BlePeripheralDemo/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = BlePeripheralDemo/Info.plist; sourceTree = "<group>"; };
+		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = BlePeripheralDemo/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		3B4392A12AC88292D35C810B /* Pods-BlePeripheralDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BlePeripheralDemo.debug.xcconfig"; path = "Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		3C90F54E38D776CD4AD1F499 /* Pods_BlePeripheralDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BlePeripheralDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		5709B34CF0A7D63546082F79 /* Pods-BlePeripheralDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BlePeripheralDemo.release.xcconfig"; path = "Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo.release.xcconfig"; sourceTree = "<group>"; };
+		587E6F862E582E9C0036AC17 /* BlePeripheralDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = BlePeripheralDemo.entitlements; path = BlePeripheralDemo/BlePeripheralDemo.entitlements; sourceTree = "<group>"; };
+		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = BlePeripheralDemo/AppDelegate.swift; sourceTree = "<group>"; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = BlePeripheralDemo/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -33,31 +33,31 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1490A57E42BF353705B56A35 /* Pods_BlePeripheralManagerExample.framework in Frameworks */,
+				1490A57E42BF353705B56A35 /* Pods_BlePeripheralDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* BlePeripheralManagerExample */ = {
+		13B07FAE1A68108700A75B9A /* BlePeripheralDemo */ = {
 			isa = PBXGroup;
 			children = (
-				587E6F862E582E9C0036AC17 /* BlePeripheralManagerExample.entitlements */,
+				587E6F862E582E9C0036AC17 /* BlePeripheralDemo.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
-			name = BlePeripheralManagerExample;
+			name = BlePeripheralDemo;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				3C90F54E38D776CD4AD1F499 /* Pods_BlePeripheralManagerExample.framework */,
+				3C90F54E38D776CD4AD1F499 /* Pods_BlePeripheralDemo.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -72,7 +72,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* BlePeripheralManagerExample */,
+				13B07FAE1A68108700A75B9A /* BlePeripheralDemo */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -86,7 +86,7 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* BlePeripheralManagerExample.app */,
+				13B07F961A680F5B00A75B9A /* BlePeripheralDemo.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -94,8 +94,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				3B4392A12AC88292D35C810B /* Pods-BlePeripheralManagerExample.debug.xcconfig */,
-				5709B34CF0A7D63546082F79 /* Pods-BlePeripheralManagerExample.release.xcconfig */,
+				3B4392A12AC88292D35C810B /* Pods-BlePeripheralDemo.debug.xcconfig */,
+				5709B34CF0A7D63546082F79 /* Pods-BlePeripheralDemo.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -103,9 +103,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* BlePeripheralManagerExample */ = {
+		13B07F861A680F5B00A75B9A /* BlePeripheralDemo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "BlePeripheralManagerExample" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "BlePeripheralDemo" */;
 			buildPhases = (
 				C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
@@ -119,9 +119,9 @@
 			);
 			dependencies = (
 			);
-			name = BlePeripheralManagerExample;
-			productName = BlePeripheralManagerExample;
-			productReference = 13B07F961A680F5B00A75B9A /* BlePeripheralManagerExample.app */;
+			name = BlePeripheralDemo;
+			productName = BlePeripheralDemo;
+			productReference = 13B07F961A680F5B00A75B9A /* BlePeripheralDemo.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -137,7 +137,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "BlePeripheralManagerExample" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "BlePeripheralDemo" */;
 			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -150,7 +150,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* BlePeripheralManagerExample */,
+				13B07F861A680F5B00A75B9A /* BlePeripheralDemo */,
 			);
 		};
 /* End PBXProject section */
@@ -191,15 +191,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
@@ -217,7 +217,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-BlePeripheralManagerExample-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-BlePeripheralDemo-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -230,15 +230,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralManagerExample/Pods-BlePeripheralManagerExample-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BlePeripheralDemo/Pods-BlePeripheralDemo-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -257,18 +257,18 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-BlePeripheralManagerExample.debug.xcconfig */;
+			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-BlePeripheralDemo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = BlePeripheralManagerExample/BlePeripheralManagerExample.entitlements;
+				CODE_SIGN_ENTITLEMENTS = BlePeripheralDemo/BlePeripheralDemo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8H8Y4C2SQ8;
 				ENABLE_BITCODE = NO;
-				INFOPLIST_FILE = BlePeripheralManagerExample/Info.plist;
+				INFOPLIST_FILE = BlePeripheralDemo/Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This app requires Bluetooth to broadcast heart rate data.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This app requires Bluetooth to broadcast heart rate data.";
 				INFOPLIST_KEY_NSBluetoothWhileInUseUsageDescription = "This app requires Bluetooth to broadcast heart rate data.";
@@ -284,8 +284,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = bleperipheralmanager.example;
-				PRODUCT_NAME = BlePeripheralManagerExample;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bleperipheraldemo;
+				PRODUCT_NAME = BlePeripheralDemo;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -300,17 +300,17 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-BlePeripheralManagerExample.release.xcconfig */;
+			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-BlePeripheralDemo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = BlePeripheralManagerExample/BlePeripheralManagerExample.entitlements;
+				CODE_SIGN_ENTITLEMENTS = BlePeripheralDemo/BlePeripheralDemo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8H8Y4C2SQ8;
-				INFOPLIST_FILE = BlePeripheralManagerExample/Info.plist;
+				INFOPLIST_FILE = BlePeripheralDemo/Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This app requires Bluetooth to broadcast heart rate data.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "This app requires Bluetooth to broadcast heart rate data.";
 				INFOPLIST_KEY_NSBluetoothWhileInUseUsageDescription = "This app requires Bluetooth to broadcast heart rate data.";
@@ -326,8 +326,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = bleperipheralmanager.example;
-				PRODUCT_NAME = BlePeripheralManagerExample;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bleperipheraldemo;
+				PRODUCT_NAME = BlePeripheralDemo;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -516,7 +516,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "BlePeripheralManagerExample" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "BlePeripheralDemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -525,7 +525,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "BlePeripheralManagerExample" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "BlePeripheralDemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

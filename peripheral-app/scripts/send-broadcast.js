@@ -48,7 +48,7 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-const ACTION = 'com.bleperipheralmanager.example.CUSTOM_COMMAND';
+const ACTION = 'com.bleperipheraldemo.CUSTOM_COMMAND';
 
 console.log('📡 Sending broadcast intent...');
 console.log(`   Action: ${ACTION}`);

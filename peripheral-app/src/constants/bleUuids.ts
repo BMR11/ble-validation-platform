@@ -24,9 +24,9 @@ export const LBS_LED_CHAR_UUID = '00001525-1212-EFDE-1523-785FEABCD123';
 export const BATTERY_SERVICE_UUID = '180F';
 export const BATTERY_LEVEL_CHAR_UUID = '2A19';
 
-/** Matches example/scripts/send-broadcast.js and native forwarding filter */
+/** Matches scripts/send-broadcast.js and native forwarding filter */
 export const EXAMPLE_BROADCAST_ACTION =
-  'com.bleperipheralmanager.example.CUSTOM_COMMAND';
+  'com.bleperipheraldemo.CUSTOM_COMMAND';
 
 // Device Information Service (0x180A)
 export const DEVICE_INFO_SERVICE_UUID = '180A';

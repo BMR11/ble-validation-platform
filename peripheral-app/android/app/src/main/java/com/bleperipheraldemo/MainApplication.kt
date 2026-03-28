@@ -1,4 +1,4 @@
-package bleperipheralmanager.example
+package com.bleperipheraldemo
 
 import android.app.Application
 import com.facebook.react.PackageList
