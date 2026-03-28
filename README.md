@@ -135,3 +135,10 @@ Peripheral BLE engine and types are derived from the **`react-native-ble-periphe
 ## Git
 
 A **local** Git repository is initialized in this folder with a React Native–oriented `.gitignore`. **Nothing is pushed to remotes** as part of this project setup.
+
+## ⭐ Support
+If this project helps you:
+- ⭐ Star the repo
+- 🧪 Try it in your workflow
+- 🤝 Share feedback
+This helps make BLE development more accessible and scalable.
