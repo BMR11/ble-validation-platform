@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import BleManager from 'react-native-ble-manager';
+import BleManager, { BleScanMode } from 'react-native-ble-manager';
 import type { Peripheral } from 'react-native-ble-manager';
 import { DEMO_TARGETS, type DemoTargetId } from './centralTargets';
 import { normUuid } from './uuid';
@@ -58,15 +58,34 @@ async function requestAndroidBle(): Promise<boolean> {
   );
 }
 
-function matchesTarget(p: Peripheral, targetId: DemoTargetId): boolean {
+/**
+ * @param osServiceFilter true when the native scan used serviceUUIDs (OS already narrowed results).
+ *        For Nordic LBS we often scan without that filter because 128‑bit service scan filters miss
+ *        some peripherals; then we require a name hint or advertised LBS UUID so we do not list
+ *        every anonymous BLE device.
+ */
+function matchesTarget(
+  p: Peripheral,
+  targetId: DemoTargetId,
+  osServiceFilter: boolean
+): boolean {
   const t = DEMO_TARGETS[targetId];
+  const uuids = p.advertising?.serviceUUIDs;
+  const targetUuid = normUuid(t.scanServiceUuid);
+  if (Array.isArray(uuids)) {
+    for (const u of uuids) {
+      if (normUuid(String(u)) === targetUuid) {
+        return true;
+      }
+    }
+  }
   const name = (p.name || p.advertising?.localName || '')
     .trim()
     .toLowerCase();
-  if (!name) {
-    return true;
+  if (name) {
+    return t.nameHints.some((h) => name.includes(h));
   }
-  return t.nameHints.some((h) => name.includes(h));
+  return osServiceFilter;
 }
 
 export default function CentralApp() {
@@ -81,6 +100,18 @@ export default function CentralApp() {
   const [batteryLine, setBatteryLine] = useState<string>('--');
   const [buttonLine, setButtonLine] = useState<string>('--');
   const deviceMapRef = useRef<Map<string, Peripheral>>(new Map());
+  /** Matches `matchesTarget` third arg — set in handleScan before BleManager.scan. */
+  const osServiceScanFilterRef = useRef(true);
+  /** `scan()`'s Promise resolves when the scan *starts* (iOS/Android), not when it ends. */
+  const scanFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanGenerationRef = useRef(0);
+
+  const clearScanFallbackTimer = useCallback(() => {
+    if (scanFallbackTimerRef.current != null) {
+      clearTimeout(scanFallbackTimerRef.current);
+      scanFallbackTimerRef.current = null;
+    }
+  }, []);
 
   const addLog = useCallback((type: LogType, message: string) => {
     const t = new Date().toLocaleTimeString('en-US', {
@@ -113,14 +144,15 @@ export default function CentralApp() {
 
   useEffect(() => {
     const sub = BleManager.onDiscoverPeripheral((p) => {
-      if (!matchesTarget(p, targetId)) {
+      if (!matchesTarget(p, targetId, osServiceScanFilterRef.current)) {
         return;
       }
+      addLog('data', `Discovered: ${JSON.stringify(p)}`);
       deviceMapRef.current.set(p.id, p);
       setDevices(Array.from(deviceMapRef.current.values()));
     });
     return () => sub.remove();
-  }, [targetId]);
+  }, [addLog, targetId]);
 
   useEffect(() => {
     const sub = BleManager.onDidUpdateValueForCharacteristic((e) => {
@@ -158,6 +190,20 @@ export default function CentralApp() {
     return () => sub.remove();
   }, [addLog]);
 
+  useEffect(() => {
+    const sub = BleManager.onStopScan(() => {
+      clearScanFallbackTimer();
+      setScanning(false);
+      addLog('info', 'Scan finished');
+    });
+    return () => {
+      sub.remove();
+      clearScanFallbackTimer();
+    };
+  }, [addLog, clearScanFallbackTimer]);
+
+  const SCAN_DURATION_SEC = 8;
+
   const handleScan = useCallback(async () => {
     const ok = await requestAndroidBle();
     if (!ok) {
@@ -165,22 +211,44 @@ export default function CentralApp() {
       return;
     }
     const target = DEMO_TARGETS[targetId];
+    const gen = ++scanGenerationRef.current;
+    clearScanFallbackTimer();
+
+    const useOsServiceFilter = targetId !== 'nordic-lbs';
+    osServiceScanFilterRef.current = useOsServiceFilter;
+
     deviceMapRef.current.clear();
     setDevices([]);
     setScanning(true);
-    addLog('info', `Scanning for ${target.label}…`);
+    addLog(
+      'info',
+      useOsServiceFilter
+        ? `Scanning for ${target.label} (${SCAN_DURATION_SEC}s, service filter)…`
+        : `Scanning for ${target.label} (${SCAN_DURATION_SEC}s, broad + name/UUID match)…`
+    );
     try {
       await BleManager.scan({
-        serviceUUIDs: [target.scanServiceUuid],
-        seconds: 8,
+        serviceUUIDs: useOsServiceFilter ? [target.scanServiceUuid] : [],
+        seconds: SCAN_DURATION_SEC,
+        ...(Platform.OS === 'android' && !useOsServiceFilter
+          ? { scanMode: BleScanMode.LowLatency }
+          : {}),
       });
+      // Native stops the scan after `seconds`; JS Promise above usually completes on *start*.
+      scanFallbackTimerRef.current = setTimeout(() => {
+        scanFallbackTimerRef.current = null;
+        if (scanGenerationRef.current !== gen) {
+          return;
+        }
+        setScanning(false);
+        addLog('info', 'Scan finished');
+      }, SCAN_DURATION_SEC * 1000 + 500);
     } catch (e) {
-      addLog('error', `Scan error: ${e}`);
-    } finally {
+      clearScanFallbackTimer();
       setScanning(false);
-      addLog('info', 'Scan finished');
+      addLog('error', `Scan error: ${e}`);
     }
-  }, [addLog, targetId]);
+  }, [addLog, clearScanFallbackTimer, targetId]);
 
   const setupHeart = useCallback(
     async (peripheralId: string) => {
