@@ -52,3 +52,4 @@ package-lock.json
 
 # Ruby bundler (optional; often fails on system Ruby — prefer `pod install`)
 **/vendor/bundle/
+central-app/ios/local_builds/
