@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# React Native / native builds (any nested app)
+**/android/build/
+**/android/app/build/
+**/.gradle/
+**/.cxx/
+**/local.properties
+android/build/
+android/app/build/
+ios/build/
+ios/Pods/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Metro / bundler
+.expo/
+dist/
+build/
+
+# Logs and temp
+*.log
+*.tmp
+*.swp
+npm-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.*
+
+# Secrets
+*.keystore
+debug.keystore
+*.jks
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Test / coverage
+coverage/
+
+# Lockfiles (monorepo uses per-app installs; ignore if you prefer yarn)
+package-lock.json

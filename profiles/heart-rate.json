@@ -1,0 +1,146 @@
+{
+  "id": "heart-rate-monitor",
+  "name": "Heart Rate Monitor",
+  "version": "1.0",
+  "description": "Emulates a BLE heart rate monitor with battery and device info",
+  "advertising": {
+    "localName": "RN_BLE_HR_Demo",
+    "deviceName": "My_HR"
+  },
+  "deviceInfo": {
+    "manufacturerName": "Demo Manufacturer",
+    "modelNumber": "RN-BLE-Peripheral-001",
+    "serialNumber": "DEMO-2024-001234",
+    "hardwareRevision": "1.0.0",
+    "firmwareRevision": "2.1.0",
+    "softwareRevision": "1.0.0"
+  },
+  "stateMachine": {
+    "initial": "idle",
+    "states": {
+      "idle": {
+        "name": "Idle",
+        "description": "Waiting for central to subscribe",
+        "transitions": [
+          {
+            "to": "active",
+            "trigger": { "type": "onSubscribe", "characteristicUUID": "2A37" },
+            "label": "Central subscribed to HR"
+          },
+          {
+            "to": "active",
+            "trigger": { "type": "manual" },
+            "label": "Start Monitoring"
+          }
+        ]
+      },
+      "active": {
+        "name": "Active",
+        "description": "Actively monitoring heart rate",
+        "transitions": [
+          {
+            "to": "idle",
+            "trigger": { "type": "onUnsubscribe", "characteristicUUID": "2A37" },
+            "label": "Central unsubscribed"
+          },
+          {
+            "to": "error",
+            "trigger": { "type": "manual" },
+            "label": "Simulate Error"
+          }
+        ]
+      },
+      "error": {
+        "name": "Error",
+        "description": "Sensor error -- sends zero readings",
+        "transitions": [
+          {
+            "to": "active",
+            "trigger": { "type": "manual" },
+            "label": "Clear Error"
+          },
+          {
+            "to": "idle",
+            "trigger": { "type": "timer", "delayMs": 10000 },
+            "label": "Auto-reset after 10s"
+          }
+        ]
+      }
+    }
+  },
+  "services": [
+    {
+      "uuid": "180D",
+      "name": "Heart Rate",
+      "primary": true,
+      "characteristics": [
+        {
+          "uuid": "2A37",
+          "name": "Heart Rate Measurement",
+          "properties": ["notify"],
+          "permissions": ["readable"],
+          "value": { "type": "uint8Array", "initial": [0, 0] },
+          "valueGenerator": "heartRateMeasurement",
+          "ui": {
+            "label": "Heart Rate",
+            "unit": "BPM",
+            "control": "stepper",
+            "min": 40,
+            "max": 200,
+            "step": 1
+          }
+        },
+        {
+          "uuid": "2A38",
+          "name": "Body Sensor Location",
+          "properties": ["read"],
+          "permissions": ["readable"],
+          "value": { "type": "uint8", "initial": 1 },
+          "stateOverrides": {
+            "error": {
+              "readBehavior": "reject",
+              "rejectError": "UnlikelyError"
+            }
+          }
+        },
+        {
+          "uuid": "2A39",
+          "name": "Heart Rate Control Point",
+          "properties": ["write"],
+          "permissions": ["writeable"],
+          "value": { "type": "uint8", "initial": 0 },
+          "onWrite": { "action": "log", "decode": "uint8" },
+          "stateOverrides": {
+            "error": {
+              "writeBehavior": "reject",
+              "rejectError": "UnlikelyError"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "uuid": "180F",
+      "name": "Battery",
+      "primary": true,
+      "characteristics": [
+        {
+          "uuid": "2A19",
+          "name": "Battery Level",
+          "properties": ["read", "notify"],
+          "permissions": ["readable"],
+          "value": { "type": "uint8", "initial": 100 },
+          "valueGenerator": "batteryDecrement",
+          "ui": {
+            "label": "Battery",
+            "unit": "%",
+            "control": "slider",
+            "min": 0,
+            "max": 100,
+            "step": 10
+          }
+        }
+      ]
+    }
+  ]
+}

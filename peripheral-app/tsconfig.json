@@ -1,0 +1,10 @@
+{
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "types": ["react-native"],
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "index.js"]
+}

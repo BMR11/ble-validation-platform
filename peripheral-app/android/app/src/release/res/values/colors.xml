@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Purple tone for release variant launcher icon -->
+    <color name="ic_launcher_release_background">#6A1B9A</color>
+    <color name="ic_launcher_release_foreground">#FFFFFF</color>
+</resources>
