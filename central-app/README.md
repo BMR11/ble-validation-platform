@@ -1,97 +1,79 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# BLE Central Demo (`central-app`)
 
-# Getting Started
+React Native app using **`react-native-ble-manager`** to scan, connect, and talk to the peripheral emulator (`peripheral-app`).
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Prerequisites
 
-## Step 1: Start Metro
+- Xcode + CocoaPods (`pod` on your `PATH` is enough; `bundle install` is optional).
+- Set a UTF-8 locale when running CocoaPods (avoids `ASCII-8BIT` / unicode errors):
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+  ```bash
+  export LANG=en_US.UTF-8
+  export LC_ALL=en_US.UTF-8
+  ```
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## iOS setup (required on first clone / after native dep changes)
 
-```sh
-# Using npm
-npm start
+1. Install JS deps from **this folder**:
 
-# OR using Yarn
-yarn start
-```
+   ```bash
+   yarn install   # or npm install
+   ```
 
-## Step 2: Build and run your app
+2. Install pods (creates `ios/Pods/` and `BleCentralDemo.xcworkspace`):
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+   ```bash
+   yarn pod-install
+   ```
 
-### Android
+   Equivalent manual command:
 
-```sh
-# Using npm
-npm run android
+   ```bash
+   cd ios && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install && cd ..
+   ```
 
-# OR using Yarn
+3. **Physical iPhone**: Xcode must know your **Team** for signing.
+   - Open **`ios/BleCentralDemo.xcworkspace`** (not the `.xcodeproj`).
+   - Select target **BleCentralDemo** → **Signing & Capabilities** → choose your **Team**  
+     (`CODE_SIGN_STYLE` is already **Automatic** in the project).
+
+4. Run the app:
+   - **Simulator** (avoids device signing if you only have a simulator booted):
+
+     ```bash
+     yarn ios --simulator "iPhone 16"
+     ```
+
+     Adjust the simulator name to one you have (`xcrun simctl list devices available`).
+
+   - **Device**: after step 3, `yarn ios` will target a connected device if one is selected/booted.
+
+### If you see errors like “Unable to open … Pods-BleCentralDemo.debug.xcconfig”
+
+`Pods/` was never generated. Run **`yarn pod-install`** again from `central-app`.
+
+### If CocoaPods prints “Unicode Normalization not appropriate for ASCII-8BIT”
+
+Export `LANG=en_US.UTF-8` and `LC_ALL=en_US.UTF-8` (see above), then re-run `pod install`.
+
+## Android
+
+```bash
 yarn android
 ```
 
-### iOS
+Ensure Bluetooth permissions are granted when prompted.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## Metro
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```bash
+yarn start
 ```
 
-Then, and every time you update your native dependencies, run:
+## Tests
 
-```sh
-bundle exec pod install
+```bash
+yarn test
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+(May require a proper local environment; BLE native module is not exercised in Jest by default.)

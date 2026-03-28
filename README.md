@@ -81,11 +81,16 @@ Flow:
 
 ```bash
 cd central-app
+npm install
+# iOS only — once per clone / native dependency change:
+npm run pod-install
 npm start
 npm run android
-# or
-npm run ios
+# iOS (simulator example; physical device needs a signing Team in Xcode)
+npm run ios -- --simulator "iPhone 16"
 ```
+
+See [central-app/README.md](central-app/README.md) for CocoaPods locale issues, **`BleCentralDemo.xcworkspace`**, and **Signing & Capabilities** on a real iPhone.
 
 Flow:
 

@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "pod-install": "bash -lc 'cd ios && export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 && pod install'",
     "ios": "react-native run-ios",
+    "ios:sim": "react-native run-ios --simulator \"iPhone 16\"",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"

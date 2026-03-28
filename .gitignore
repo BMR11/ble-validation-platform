@@ -11,6 +11,8 @@ android/build/
 android/app/build/
 ios/build/
 ios/Pods/
+**/ios/build/
+**/Pods/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 
@@ -46,3 +48,6 @@ coverage/
 
 # Lockfiles (monorepo uses per-app installs; ignore if you prefer yarn)
 package-lock.json
+
+# Ruby bundler (optional; often fails on system Ruby — prefer `pod install`)
+**/vendor/bundle/
