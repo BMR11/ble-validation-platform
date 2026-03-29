@@ -1,0 +1,156 @@
+:root {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.5;
+  color: #e8eaef;
+  background: #0f1115;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: #7eb8ff;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.card {
+  background: #161a22;
+  border: 1px solid #2a3140;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.muted {
+  color: #8b93a5;
+  font-size: 0.9rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn {
+  border-radius: 8px;
+  border: 1px solid #3d4a5f;
+  background: #1e2633;
+  color: #e8eaef;
+  padding: 0.45rem 0.9rem;
+}
+
+.btn:hover {
+  background: #252e3d;
+}
+
+.btn-primary {
+  border-color: #3d6b4f;
+  background: #1a3024;
+  color: #c8e6d0;
+}
+
+.btn-danger {
+  border-color: #6b3d3d;
+  background: #301a1a;
+  color: #f0c4c4;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: #3d4a5f;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  color: #a8b0c0;
+}
+
+.field input,
+.field textarea,
+.field select {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #2a3140;
+  background: #0f1115;
+  color: #e8eaef;
+}
+
+.field textarea.code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  min-height: 280px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-published {
+  background: #1a3024;
+  color: #9dceb0;
+  border: 1px solid #2d5a40;
+}
+
+.badge-draft {
+  background: #302a1a;
+  color: #e0c49d;
+  border: 1px solid #5a4a2d;
+}
+
+.error {
+  color: #f0a8a8;
+  font-size: 0.9rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}

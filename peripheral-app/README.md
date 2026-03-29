@@ -2,6 +2,10 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 # Getting Started
 
+## Remote profiles (`.env`)
+
+For **Profile source → Remote**, copy **`.env.example`** to **`.env`** and set **`REMOTE_PROFILE_LAN_HOST`** (or **`REMOTE_PROFILE_TUNNEL_BASE`**) for your machine. Never commit **`.env`**. Details: [`docs/remote-profiles.md`](../docs/remote-profiles.md).
+
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
 ## Step 1: Start Metro

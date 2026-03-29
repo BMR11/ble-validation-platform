@@ -27,6 +27,12 @@ import {
 
 import { ProfileEngine } from './profiles/profileEngine';
 import { BUNDLED_PROFILES } from './profiles/profileRegistry';
+import {
+  fetchRemoteProfileCatalog,
+  fetchRemoteLatestBleProfile,
+  type RemoteCatalogRow,
+} from './profiles/remoteProfileClient';
+import { REMOTE_PROFILE_API_BASE } from './config/remoteProfileApiBase';
 import type {
   BleProfile,
   ProfileCharacteristic,
@@ -96,6 +102,13 @@ export default function ProfileApp() {
   const [manualTransitions, setManualTransitions] = useState<
     Array<{ to: string; label: string }>
   >([]);
+
+  const [profileSource, setProfileSource] = useState<'local' | 'remote'>('local');
+  const [remoteRows, setRemoteRows] = useState<RemoteCatalogRow[]>([]);
+  const [remoteListLoading, setRemoteListLoading] = useState(false);
+  const [remoteProfileLoadingId, setRemoteProfileLoadingId] = useState<string | null>(
+    null
+  );
 
   const engineRef = useRef<ProfileEngine | null>(null);
 
@@ -196,6 +209,38 @@ export default function ProfileApp() {
     setSelectedProfile(profile);
     addLog('info', `Selected profile: ${profile.name}`);
   }, [addLog]);
+
+  const handleFetchRemoteCatalog = useCallback(async () => {
+    setRemoteListLoading(true);
+    try {
+      const rows = await fetchRemoteProfileCatalog();
+      setRemoteRows(rows);
+      addLog('info', `Remote catalog: ${rows.length} profile(s) from server`);
+    } catch (e) {
+      addLog('error', `Remote list failed: ${e}`);
+    } finally {
+      setRemoteListLoading(false);
+    }
+  }, [addLog]);
+
+  const handleSelectRemoteProfile = useCallback(
+    async (profileId: string) => {
+      setRemoteProfileLoadingId(profileId);
+      try {
+        const profile = await fetchRemoteLatestBleProfile(profileId);
+        setSelectedProfile(profile);
+        addLog(
+          'info',
+          `Loaded remote latest: ${profile.name} (${profileId})`
+        );
+      } catch (e) {
+        addLog('error', `Remote profile failed: ${e}`);
+      } finally {
+        setRemoteProfileLoadingId(null);
+      }
+    },
+    [addLog]
+  );
 
   const handleStartPeripheral = useCallback(async () => {
     const engine = engineRef.current;
@@ -551,26 +596,122 @@ export default function ProfileApp() {
         {/* Profile picker + start (when not advertising a profile) */}
         {!activeProfile && (
           <>
-            <Text style={appStyles.sectionTitle}>Select profile</Text>
-            {BUNDLED_PROFILES.map((profile) => {
-              const selected = selectedProfile?.id === profile.id;
-              return (
-                <TouchableOpacity
-                  key={profile.id}
+            <Text style={appStyles.sectionTitle}>Profile source</Text>
+            <View style={styles.sourceRow}>
+              <TouchableOpacity
+                style={[
+                  styles.sourceChip,
+                  profileSource === 'local' && styles.sourceChipSelected,
+                ]}
+                onPress={() => {
+                  setProfileSource('local');
+                  setSelectedProfile(null);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
                   style={[
-                    styles.profileCard,
-                    selected && styles.profileCardSelected,
+                    styles.sourceChipText,
+                    profileSource === 'local' && styles.sourceChipTextSelected,
                   ]}
-                  onPress={() => selectProfile(profile)}
+                >
+                  Local
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.sourceChip,
+                  profileSource === 'remote' && styles.sourceChipSelected,
+                ]}
+                onPress={() => {
+                  setProfileSource('remote');
+                  setSelectedProfile(null);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.sourceChipText,
+                    profileSource === 'remote' && styles.sourceChipTextSelected,
+                  ]}
+                >
+                  Remote
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.remoteBaseHint}>{REMOTE_PROFILE_API_BASE}</Text>
+            <Text style={styles.remoteBaseHint}>
+              Physical device: set REMOTE_PROFILE_LAN_HOST in peripheral-app/.env (see .env.example),
+              then restart Metro with cache reset if needed.
+            </Text>
+
+            <Text style={appStyles.sectionTitle}>Select profile</Text>
+            {profileSource === 'local' &&
+              BUNDLED_PROFILES.map((profile) => {
+                const selected = selectedProfile?.id === profile.id;
+                return (
+                  <TouchableOpacity
+                    key={profile.id}
+                    style={[
+                      styles.profileCard,
+                      selected && styles.profileCardSelected,
+                    ]}
+                    onPress={() => selectProfile(profile)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.profileName}>{profile.name}</Text>
+                    {profile.description && (
+                      <Text style={styles.profileDesc}>{profile.description}</Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+
+            {profileSource === 'remote' && (
+              <>
+                <TouchableOpacity
+                  style={[
+                    styles.fetchRemoteButton,
+                    remoteListLoading && styles.startButtonDisabled,
+                  ]}
+                  onPress={handleFetchRemoteCatalog}
+                  disabled={remoteListLoading}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.profileName}>{profile.name}</Text>
-                  {profile.description && (
-                    <Text style={styles.profileDesc}>{profile.description}</Text>
-                  )}
+                  <Text style={styles.fetchRemoteButtonText}>
+                    {remoteListLoading ? 'Fetching…' : 'Fetch remote profiles'}
+                  </Text>
                 </TouchableOpacity>
-              );
-            })}
+                {remoteRows.length === 0 && !remoteListLoading && (
+                  <Text style={styles.profileDesc}>
+                    Tap fetch to load the catalog from the remote-profile server.
+                  </Text>
+                )}
+                {remoteRows.map((row) => {
+                  const selected = selectedProfile?.id === row.profileId;
+                  const loadingThis = remoteProfileLoadingId === row.profileId;
+                  return (
+                    <TouchableOpacity
+                      key={row.profileId}
+                      style={[
+                        styles.profileCard,
+                        selected && styles.profileCardSelected,
+                        loadingThis && styles.profileCardLoading,
+                      ]}
+                      onPress={() => handleSelectRemoteProfile(row.profileId)}
+                      disabled={loadingThis}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.profileName}>{row.name}</Text>
+                      <Text style={styles.profileDesc}>
+                        {row.profileId} · latest v{row.latestPublishedVersion} (
+                        {row.category})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </>
+            )}
             <TouchableOpacity
               style={[
                 styles.startButton,
@@ -676,6 +817,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 6,
+  },
+  sourceChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#1a1d24',
+    borderWidth: 1,
+    borderColor: '#2d323c',
+  },
+  sourceChipSelected: {
+    borderColor: '#4a7ab0',
+    backgroundColor: '#1a2228',
+  },
+  sourceChipText: {
+    color: '#8b949e',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sourceChipTextSelected: {
+    color: '#c8d4e8',
+  },
+  remoteBaseHint: {
+    color: '#5c6570',
+    fontSize: 11,
+    marginBottom: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  fetchRemoteButton: {
+    marginBottom: 10,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#1a2430',
+    borderWidth: 1,
+    borderColor: '#3d5a6e',
+    alignItems: 'center',
+  },
+  fetchRemoteButtonText: {
+    color: '#b8d4e8',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  profileCardLoading: {
+    opacity: 0.55,
   },
   profileCard: {
     backgroundColor: '#1a1d24',

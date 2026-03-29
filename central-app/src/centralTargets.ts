@@ -1,5 +1,5 @@
 /**
- * Scan/connect targets aligned with `profiles/*.json` in the repo root.
+ * Scan/connect targets aligned with `profiles/local/*.json` in the repo root.
  */
 
 import { toFullUuid16 } from './uuid';

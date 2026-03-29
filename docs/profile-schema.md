@@ -30,7 +30,7 @@ Each characteristic generally includes:
 
 ## `valueGenerator` (this repo)
 
-In `profiles/heart-rate.json`, some characteristics use:
+In `profiles/local/heart-rate.json`, some characteristics use:
 
 ```json
 "valueGenerator": "heartRateMeasurement"
@@ -50,9 +50,11 @@ To add a new generator:
 1. Implement a factory in `VALUE_GENERATOR_REGISTRY` inside `applyValueGenerators.ts`.
 2. Reference the key from JSON.
 
-Nordic LBS behavior in `profiles/nordic-lbs.json` is expressed directly in JSON (`onWrite`, static values) without generators, keeping that profile easy to read.
+Nordic LBS behavior in `profiles/local/nordic-lbs.json` is expressed directly in JSON (`onWrite`, static values) without generators, keeping that profile easy to read.
 
 ## Files
 
-- `profiles/heart-rate.json` — Heart Rate (0x180D), Battery (0x180F), DIS, state machine.
-- `profiles/nordic-lbs.json` — Nordic LED Button service UUIDs, battery service, state machine.
+- `profiles/local/heart-rate.json` — Heart Rate (0x180D), Battery (0x180F), DIS, state machine.
+- `profiles/local/nordic-lbs.json` — Nordic LED Button service UUIDs, battery service, state machine.
+
+The same JSON shape can be stored in **remote-profile** with multiple published versions; the peripheral still runs it through `applyValueGenerators` + `ProfileEngine`. See [remote-profiles.md](./remote-profiles.md).

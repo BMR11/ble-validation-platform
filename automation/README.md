@@ -9,7 +9,7 @@ This folder is reserved for **end-to-end automation** of the BLE emulator demo: 
 1. Launch **peripheral-app** on an Android device/emulator, select a JSON profile, and start advertising.
 2. Launch **central-app** on a second device (or iOS simulator where BLE allows), run scan/connect flows, and subscribe to notifications.
 3. Assert **logs** and **on-screen metrics** (heart rate value, Nordic LED state) match expectations.
-4. Rotate **profiles** (`profiles/heart-rate.json` vs `profiles/nordic-lbs.json`) and repeat.
+4. Rotate **profiles** (`profiles/local/heart-rate.json` vs `profiles/local/nordic-lbs.json`) and repeat.
 
 ## TODOs
 
