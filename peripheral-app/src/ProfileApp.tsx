@@ -330,9 +330,17 @@ export default function ProfileApp() {
           ? currentValue[currentValue.length - 1] ?? 0
           : 0;
 
+    const charTestBase = `peripheral-char-${normUuid(char.uuid)}`;
     return (
-      <View key={char.uuid} style={styles.charControl}>
-        {renderControl(char.ui, numericValue, serviceUUID, char.uuid, char)}
+      <View key={char.uuid} style={styles.charControl} testID={charTestBase}>
+        {renderControl(
+          char.ui,
+          numericValue,
+          serviceUUID,
+          char.uuid,
+          char,
+          charTestBase
+        )}
       </View>
     );
   };
@@ -342,15 +350,16 @@ export default function ProfileApp() {
     value: number,
     serviceUUID: string,
     charUUID: string,
-    char: ProfileCharacteristic
+    char: ProfileCharacteristic,
+    charTestBase: string
   ) => {
     switch (ui.control) {
       case 'stepper':
-        return renderStepper(ui, value, serviceUUID, charUUID);
+        return renderStepper(ui, value, serviceUUID, charUUID, charTestBase);
       case 'slider':
-        return renderSlider(ui, value, serviceUUID, charUUID);
+        return renderSlider(ui, value, serviceUUID, charUUID, charTestBase);
       case 'toggle':
-        return renderToggle(ui, value, serviceUUID, charUUID);
+        return renderToggle(ui, value, serviceUUID, charUUID, charTestBase);
       case 'readonly':
         return renderReadonly(ui, value, char);
       default:
@@ -362,7 +371,8 @@ export default function ProfileApp() {
     ui: UiHint,
     value: number,
     serviceUUID: string,
-    charUUID: string
+    charUUID: string,
+    charTestBase: string
   ) => {
     const step = ui.step || 1;
     const min = ui.min ?? 0;
@@ -402,6 +412,7 @@ export default function ProfileApp() {
             {ui.unit && <Text style={styles.stepperUnit}>{ui.unit}</Text>}
           </View>
           <TouchableOpacity
+            testID={`${charTestBase}-stepper-plus-one`}
             style={styles.stepperButton}
             onPress={() =>
               handleValueChange(serviceUUID, charUUID, Math.min(max, value + step))
@@ -432,7 +443,8 @@ export default function ProfileApp() {
     ui: UiHint,
     value: number,
     serviceUUID: string,
-    charUUID: string
+    charUUID: string,
+    charTestBase: string
   ) => {
     const step = ui.step || 10;
     const min = ui.min ?? 0;
@@ -474,6 +486,7 @@ export default function ProfileApp() {
             </Text>
           </View>
           <TouchableOpacity
+            testID={`${charTestBase}-slider-plus-step`}
             style={styles.sliderButton}
             onPress={() =>
               handleValueChange(serviceUUID, charUUID, Math.min(max, value + step))
@@ -483,6 +496,7 @@ export default function ProfileApp() {
             <Text style={styles.sliderButtonText}>+{step}</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            testID={`${charTestBase}-slider-max`}
             style={styles.sliderButton}
             onPress={() =>
               handleValueChange(serviceUUID, charUUID, max)
@@ -500,7 +514,8 @@ export default function ProfileApp() {
     ui: UiHint,
     value: number,
     serviceUUID: string,
-    charUUID: string
+    charUUID: string,
+    charTestBase: string
   ) => {
     const isOn = value !== 0;
     return (
@@ -509,6 +524,8 @@ export default function ProfileApp() {
         <View style={styles.toggleRow}>
           <Text style={styles.toggleLabel}>{isOn ? 'ON' : 'OFF'}</Text>
           <Switch
+            testID={`${charTestBase}-switch`}
+            accessibilityLabel="Peripheral LBS button switch"
             value={isOn}
             onValueChange={(newVal) =>
               handleValueChange(serviceUUID, charUUID, newVal ? 1 : 0)
@@ -599,6 +616,7 @@ export default function ProfileApp() {
             <Text style={appStyles.sectionTitle}>Profile source</Text>
             <View style={styles.sourceRow}>
               <TouchableOpacity
+                testID="peripheral-source-local"
                 style={[
                   styles.sourceChip,
                   profileSource === 'local' && styles.sourceChipSelected,
@@ -619,6 +637,7 @@ export default function ProfileApp() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                testID="peripheral-source-remote"
                 style={[
                   styles.sourceChip,
                   profileSource === 'remote' && styles.sourceChipSelected,
@@ -652,6 +671,8 @@ export default function ProfileApp() {
                 return (
                   <TouchableOpacity
                     key={profile.id}
+                    testID={`peripheral-profile-${profile.id}`}
+                    accessibilityLabel={`Peripheral profile ${profile.name}`}
                     style={[
                       styles.profileCard,
                       selected && styles.profileCardSelected,
@@ -713,6 +734,8 @@ export default function ProfileApp() {
               </>
             )}
             <TouchableOpacity
+              testID="peripheral-start"
+              accessibilityLabel="Start peripheral advertising"
               style={[
                 styles.startButton,
                 !selectedProfile && styles.startButtonDisabled,

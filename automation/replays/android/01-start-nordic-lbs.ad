@@ -1,0 +1,10 @@
+# Start peripheral-app on Android: Nordic LBS profile + advertising.
+# Requires named session: --session ble-demo-peripheral (or PERIPH_SESSION)
+context platform=android
+open com.bleperipheraldemo
+wait 2500
+scrollintoview 'id=peripheral-profile-nordic-lbs'
+click 'id=peripheral-profile-nordic-lbs'
+wait 600
+click 'id=peripheral-start'
+wait 5000

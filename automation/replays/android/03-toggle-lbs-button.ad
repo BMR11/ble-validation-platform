@@ -1,0 +1,4 @@
+# Toggle LBS button characteristic (uint8 0/1) so central should show "Button: Pressed".
+context platform=android
+click 'id=peripheral-char-000015241212efde1523785feabcd123-switch'
+wait 2000

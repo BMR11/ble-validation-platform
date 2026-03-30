@@ -403,6 +403,8 @@ export default function CentralApp() {
           return (
             <TouchableOpacity
               key={id}
+              testID={`central-target-${id}`}
+              accessibilityLabel={`Central target ${DEMO_TARGETS[id].label}`}
               style={[styles.card, sel && styles.cardSel]}
               onPress={() => {
                 setTargetId(id);
@@ -420,6 +422,8 @@ export default function CentralApp() {
         })}
 
         <TouchableOpacity
+          testID="central-scan"
+          accessibilityLabel={scanning ? 'Central scan scanning' : 'Central scan eight seconds'}
           style={[styles.btn, scanning && styles.btnDisabled]}
           onPress={handleScan}
           disabled={!bleOk || scanning}
@@ -436,6 +440,8 @@ export default function CentralApp() {
           devices.map((d) => (
             <TouchableOpacity
               key={d.id}
+              testID={`central-device-${d.id}`}
+              accessibilityLabel={`Central device ${d.name || d.id}`}
               style={styles.deviceRow}
               onPress={() => handleConnect(d)}
               disabled={!!connected || busy}
@@ -454,16 +460,26 @@ export default function CentralApp() {
             </Text>
             {targetId === 'heart-rate-monitor' && (
               <>
-                <Text style={styles.metric}>HR: {hrLine}</Text>
-                <Text style={styles.metric}>Battery: {batteryLine}</Text>
+                <Text testID="central-metric-hr" style={styles.metric}>
+                  HR: {hrLine}
+                </Text>
+                <Text testID="central-metric-battery" style={styles.metric}>
+                  Battery: {batteryLine}
+                </Text>
               </>
             )}
             {targetId === 'nordic-lbs' && (
               <>
-                <Text style={styles.metric}>Button: {buttonLine}</Text>
-                <Text style={styles.metric}>Battery: {batteryLine}</Text>
+                <Text testID="central-metric-button" style={styles.metric}>
+                  Button: {buttonLine}
+                </Text>
+                <Text testID="central-metric-battery" style={styles.metric}>
+                  Battery: {batteryLine}
+                </Text>
                 <View style={styles.row}>
                   <TouchableOpacity
+                    testID="central-led-on"
+                    accessibilityLabel="Central LED on"
                     style={styles.smallBtn}
                     onPress={() => writeLed(true)}
                     disabled={busy}
@@ -471,6 +487,8 @@ export default function CentralApp() {
                     <Text style={styles.btnText}>LED ON</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
+                    testID="central-led-off"
+                    accessibilityLabel="Central LED off"
                     style={styles.smallBtn}
                     onPress={() => writeLed(false)}
                     disabled={busy}

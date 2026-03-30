@@ -1,0 +1,15 @@
+{
+  "name": "ble-device-emulator-demo-automation",
+  "private": true,
+  "description": "E2E helpers using Callstack agent-device + adb for BLE demo apps",
+  "scripts": {
+    "agent-device": "agent-device",
+    "e2e:lbs-battery": "bash scripts/run-lbs-battery-e2e.sh"
+  },
+  "devDependencies": {
+    "agent-device": "^0.11.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

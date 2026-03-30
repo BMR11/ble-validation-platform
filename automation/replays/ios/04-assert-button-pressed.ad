@@ -1,0 +1,4 @@
+context platform=ios
+open org.reactjs.native.example.BleCentralDemo
+wait 1500
+find text "Button: Pressed" exists

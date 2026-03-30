@@ -1,0 +1,8 @@
+# From profile default 50%, three +10 steps → 80% on Battery Level slider (2A19).
+context platform=android
+click 'id=peripheral-char-2a19-slider-plus-step'
+wait 500
+click 'id=peripheral-char-2a19-slider-plus-step'
+wait 500
+click 'id=peripheral-char-2a19-slider-plus-step'
+wait 2500
