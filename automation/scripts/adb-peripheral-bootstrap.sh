@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
 # Launch peripheral-app on a connected Android device/emulator and pre-grant BLE-related
 # permissions where the platform allows (API 31+). Pair with agent-device replays or manual UI.
+#
+# Package id:
+#   Debug (default):     com.bleperipheraldemo
+#   Release (this repo): com.bleperipheraldemo.release   (see peripheral-app/android/app/build.gradle)
+#
+# Optional: ANDROID_PERIPHERAL_PACKAGE in automation/.env (see .env.example).
 set -euo pipefail
 
-PKG="com.bleperipheraldemo"
-ACTIVITY="${PKG}/.MainActivity"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AUTO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=load-automation-env.sh
+source "${SCRIPT_DIR}/load-automation-env.sh"
+ble_automation_load_env "${AUTO_DIR}/.env"
+
+PKG="${ANDROID_PERIPHERAL_PACKAGE:-com.bleperipheraldemo}"
 
 echo "[adb-peripheral-bootstrap] Waiting for Android device…"
 adb wait-for-device
@@ -17,7 +28,7 @@ for perm in \
   adb shell pm grant "$PKG" "$perm" 2>/dev/null || true
 done
 
-echo "[adb-peripheral-bootstrap] Starting ${ACTIVITY}"
-adb shell am start -n "$ACTIVITY" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+echo "[adb-peripheral-bootstrap] Launching package ${PKG} (launcher via monkey — works for debug + release applicationId)"
+adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
 
 echo "[adb-peripheral-bootstrap] Done. Use agent-device (Android session) or tap UI to select Nordic LBS and Start."

@@ -113,8 +113,8 @@ export const appStyles = StyleSheet.create({
     backgroundColor: '#a67a72',
   },
   controlsContainer: {
-    flex: 1,
-    maxHeight: '45%',
+    // flex: 1,
+    maxHeight: '60%',
   },
   controlsContent: {
     padding: 16,

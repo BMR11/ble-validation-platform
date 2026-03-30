@@ -450,10 +450,11 @@ export default function ProfileApp() {
     const min = ui.min ?? 0;
     const max = ui.max ?? 100;
     const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+    const isBatteryLevelChar = normUuid(charUUID) === '2a19';
 
     return (
       <View>
-        <Text style={styles.controlLabel}>
+        <Text style={styles.controlLabel} accessible={false}>
           {ui.label}
           {ui.unit ? ` (${ui.unit})` : ''}
         </Text>
@@ -486,6 +487,10 @@ export default function ProfileApp() {
             </Text>
           </View>
           <TouchableOpacity
+            accessible={isBatteryLevelChar}
+            accessibilityLabel={
+              isBatteryLevelChar ? 'Peripheral battery plus ten' : undefined
+            }
             testID={`${charTestBase}-slider-plus-step`}
             style={styles.sliderButton}
             onPress={() =>
@@ -493,7 +498,12 @@ export default function ProfileApp() {
             }
             activeOpacity={0.7}
           >
-            <Text style={styles.sliderButtonText}>+{step}</Text>
+            <Text
+              style={styles.sliderButtonText}
+              accessible={isBatteryLevelChar ? false : undefined}
+            >
+              +{step}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             testID={`${charTestBase}-slider-max`}
@@ -520,10 +530,15 @@ export default function ProfileApp() {
     const isOn = value !== 0;
     return (
       <View>
-        <Text style={styles.controlLabel}>{ui.label}</Text>
+        <Text style={styles.controlLabel} accessible={false}>
+          {ui.label}
+        </Text>
         <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>{isOn ? 'ON' : 'OFF'}</Text>
+          <Text style={styles.toggleLabel} accessible={false}>
+            {isOn ? 'ON' : 'OFF'}
+          </Text>
           <Switch
+            accessible
             testID={`${charTestBase}-switch`}
             accessibilityLabel="Peripheral LBS button switch"
             value={isOn}
@@ -671,6 +686,7 @@ export default function ProfileApp() {
                 return (
                   <TouchableOpacity
                     key={profile.id}
+                    accessible
                     testID={`peripheral-profile-${profile.id}`}
                     accessibilityLabel={`Peripheral profile ${profile.name}`}
                     style={[
@@ -680,9 +696,13 @@ export default function ProfileApp() {
                     onPress={() => selectProfile(profile)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.profileName}>{profile.name}</Text>
+                    <Text style={styles.profileName} accessible={false}>
+                      {profile.name}
+                    </Text>
                     {profile.description && (
-                      <Text style={styles.profileDesc}>{profile.description}</Text>
+                      <Text style={styles.profileDesc} accessible={false}>
+                        {profile.description}
+                      </Text>
                     )}
                   </TouchableOpacity>
                 );
@@ -734,8 +754,9 @@ export default function ProfileApp() {
               </>
             )}
             <TouchableOpacity
+              accessible
               testID="peripheral-start"
-              accessibilityLabel="Start peripheral advertising"
+              accessibilityLabel="Start peripheral"
               style={[
                 styles.startButton,
                 !selectedProfile && styles.startButtonDisabled,
@@ -744,7 +765,9 @@ export default function ProfileApp() {
               disabled={!selectedProfile}
               activeOpacity={0.7}
             >
-              <Text style={styles.startButtonText}>Start peripheral</Text>
+              <Text style={styles.startButtonText} accessible={false}>
+                Start peripheral
+              </Text>
             </TouchableOpacity>
           </>
         )}

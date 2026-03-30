@@ -35,8 +35,57 @@ Do this once per device (or when native code changes).
 
 **Important:** This flow needs a **real Bluetooth link** between peripheral and central in almost all cases. Use a **physical Android phone** as peripheral and a **physical iPhone** as central unless you know your emulator/simulator supports BLE for both roles.
 
-- Android package for adb: `com.bleperipheraldemo`.
-- iOS bundle ID for `open` in replays: `org.reactjs.native.example.BleCentralDemo`.
+- Android **application id**: **debug** `com.bleperipheraldemo` · **release** (this repo) `com.bleperipheraldemo.release` — set `ANDROID_PERIPHERAL_PACKAGE` when using release (see Part 1.4).
+- iOS bundle ID for `open` in replays: `org.reactjs.native.example.BleCentralDemo` (same for Debug and typical Release).
+
+### 1.4 First-time checklist: release builds + when each app runs
+
+**What you do before automation**
+
+1. **Build and install both apps** on the two devices (USB is only required for install and for `adb` / Xcode tooling; BLE works over the air after that).
+2. **Turn Bluetooth on** on both phones.
+3. **Install automation deps** (`cd automation && npm install`).
+4. **Complete agent-device + macOS permissions** once (Accessibility, etc.) per [their docs](https://incubator.callstack.com/agent-device/docs/introduction).
+
+**You do not choose “run iOS first or Android first” by hand** for the full suite: `run-lbs-battery-e2e.sh` already runs steps in the right order (peripheral must be advertising before the central scans). It alternates platforms like this: start peripheral → central connects and checks baseline → peripheral toggles button → central asserts → peripheral changes battery → central asserts.
+
+**Android peripheral — release APK**
+
+From `peripheral-app/android` (with JS deps already installed in `peripheral-app/`):
+
+```bash
+cd peripheral-app/android
+./gradlew assembleRelease --no-daemon
+```
+
+Install the APK (path may match `app/build/outputs/apk/release/blep-example-release-*.apk`):
+
+```bash
+adb install -r app/build/outputs/apk/release/blep-example-release-*.apk
+```
+
+For automation and adb grants, set:
+
+```bash
+export ANDROID_PERIPHERAL_PACKAGE=com.bleperipheraldemo.release
+```
+
+**iOS central — Release on a physical iPhone**
+
+From `central-app/` (after `npm install` / `yarn` and `pod install` per `central-app/README.md`):
+
+- **Xcode:** open `central-app/ios/BleCentralDemo.xcworkspace`, select scheme **BleCentralDemo**, configuration **Release**, your team/signing, run on the device.
+
+  or
+
+- **CLI (example):**
+
+  ```bash
+  cd central-app
+  npx react-native run-ios --mode Release --device "Your iPhone Name"
+  ```
+
+**Open each app once manually (recommended the first time)** so iOS/Android system Bluetooth prompts are accepted; after that, the script can drive the UI.
 
 ---
 
@@ -50,6 +99,20 @@ npm install
 ```
 
 This installs `agent-device` into `automation/node_modules`. The orchestrator runs it via `npx --prefix "$(pwd)" agent-device`.
+
+### 2.1 Local device IDs (`.env`, not committed)
+
+To avoid exporting **`IOS_DEVICE`**, **`IOS_UDID`**, **`ANDROID_PERIPHERAL_PACKAGE`**, etc. every time:
+
+```bash
+cd automation
+cp .env.example .env
+# Edit .env with your iPhone name, Android package id, optional ANDROID_SERIAL
+```
+
+`scripts/run-lbs-battery-e2e.sh` and `scripts/adb-peripheral-bootstrap.sh` load **`automation/.env`** if it exists. **Variables you already exported in the shell are not overwritten** by `.env` (so one-off overrides still work).
+
+The repo root `.gitignore` ignores **`.env`**; **`automation/.env.example`** is the template to commit.
 
 ---
 
@@ -112,6 +175,8 @@ bash scripts/run-lbs-battery-e2e.sh
 
 The script `scripts/run-lbs-battery-e2e.sh` runs **named sessions** so Android and iOS do not share one session: default names are `ble-demo-peripheral` and `ble-demo-central` (overridable via env vars).
 
+**Release peripheral:** export `ANDROID_PERIPHERAL_PACKAGE=com.bleperipheraldemo.release` in the same shell before `npm run e2e:lbs-battery` (the script patches Android replays and adb to use this package).
+
 | Step | Name | What happens |
 |------|------|----------------|
 | **0** | adb bootstrap | Runs `scripts/adb-peripheral-bootstrap.sh`: `adb wait-for-device`, best-effort `pm grant` for Bluetooth-related permissions on `com.bleperipheraldemo`, then `am start` to launch the peripheral app. Skip with `SKIP_ADB_BOOTSTRAP=1` if the app is already running and permissions are OK. |
@@ -134,17 +199,22 @@ Set these in the shell **before** `npm run e2e:lbs-battery`:
 | Variable | When to use |
 |----------|-------------|
 | `ANDROID_SERIAL` | Multiple Android devices connected; set to the serial from `adb devices`. |
-| `IOS_UDID` | Multiple iOS simulators/devices; set to the UDID from `npx agent-device devices`. |
+| `IOS_UDID` | Target a specific iPhone by UDID from `npx agent-device devices --json` (`id` on a row with `kind: device`). Most reliable; use if automation still boots a Simulator. |
+| `IOS_DEVICE` | Physical device name (e.g. `iPhone-RG`). When `IOS_UDID` is unset, the script resolves this name against **`kind: device`** only and passes **`--udid`**, so iOS targets the phone instead of a Simulator. If resolution fails (name typo, phone unplugged), set `IOS_UDID` explicitly. **Required** unless `ALLOW_IOS_SIMULATOR_UNTARGETED=1`. |
+| `ALLOW_IOS_SIMULATOR_UNTARGETED` | Set to `1` only if you intentionally run without `IOS_DEVICE` / `IOS_UDID` (e.g. you installed the central app on the booted simulator). |
+| **`automation/.env`** | Same keys as above; loaded automatically if the variable is **unset** in the shell. Copy from **`automation/.env.example`**. |
 | `PERIPH_SESSION` | Change the Android named session (default `ble-demo-peripheral`) if it collides with another run. |
-| `CENT_SESSION` | Change the iOS named session (default `ble-demo-central`). |
+| `CENT_SESSION` | Base name for the iOS session (default `ble-demo-central`). When `IOS_UDID` is set, the script appends a short hash so each phone gets a **fresh session name** and a stale daemon binding to a Simulator cannot persist. |
 | `SKIP_ADB_BOOTSTRAP=1` | Skip step 0 if you already launched the peripheral and granted permissions. |
+| `ANDROID_PERIPHERAL_PACKAGE` | Default `com.bleperipheraldemo` (debug). Use `com.bleperipheraldemo.release` for the **release** APK from this repo. |
 
 **Example:**
 
 ```bash
 cd automation
+export ANDROID_PERIPHERAL_PACKAGE=com.bleperipheraldemo.release   # release peripheral only
 export ANDROID_SERIAL=RFCX41ABCDE
-export IOS_UDID=00008140-001A248E1E40801C
+export IOS_DEVICE="iPhone-RG"   # or: export IOS_UDID=00008140-...
 npm run e2e:lbs-battery
 ```
 
@@ -192,6 +262,9 @@ Repeat steps in the same order as Part 4.2 if you are debugging a single stage.
 | **Selector / `find text` fails** | UI or RN version may have changed; use `agent-device snapshot` on the device to inspect the tree, or `agent-device replay -u path/to/file.ad` to refresh selectors ([replay maintenance](https://github.com/callstackincubator/agent-device)). |
 | **iOS Bluetooth permission alert** | Dismiss manually once, or automate with agent-device `alert` / `settings` per their docs. |
 | **Wrong Android phone targeted** | Set `ANDROID_SERIAL`. |
+| **Android `scrollintoview 'Several Words'` breaks** | The replay lexer splits on spaces; a quoted phrase like `'Nordic LED …'` becomes multiple args. Android replays here use **`scroll down`** plus **`click`** with `id=` / `label=` instead. |
+| **`replay cannot override session lock policy with --device`** | Fixed in `run-lbs-battery-e2e.sh` via **`--session-lock strip`** on iOS when `IOS_DEVICE` / `IOS_UDID` is set (named session + device target). Update your script if you run `agent-device replay` manually the same way. |
+| **iOS replay still targets Simulator (ignores `--udid`)** | **agent-device** keeps **named sessions** in the daemon. If `ble-demo-central` already exists from an earlier run, **`open` reuses that session’s device** and does not re-apply CLI `--udid`. The e2e script runs **`close`** on the central session first (step **0a**). Manually: `npx agent-device --session ble-demo-central --platform ios --session-lock strip --udid <UDID> close` (or omit `--udid` for close), then replay; or use a fresh **`CENT_SESSION`** name. |
 
 ---
 
@@ -199,7 +272,7 @@ Repeat steps in the same order as Part 4.2 if you are debugging a single stage.
 
 Used by the `.ad` files under `replays/`:
 
-- **Peripheral:** `peripheral-profile-nordic-lbs`, `peripheral-start`, `peripheral-char-2a19-slider-plus-step`, LBS switch `id=peripheral-char-000015241212efde1523785feabcd123-switch`.
+- **Peripheral:** `peripheral-start`, `peripheral-char-2a19-slider-plus-step`; profile row `label="Peripheral profile Nordic LED Button Service"` (and on-screen title **Nordic LED Button Service** for scrolling); LBS switch `label="Peripheral LBS button switch"`.
 - **Central:** `central-target-nordic-lbs`, `central-scan`, `label="Central device My_LBS"`, `central-metric-button`, `central-metric-battery`.
 
 ---

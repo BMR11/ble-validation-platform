@@ -1,11 +1,17 @@
-# From profile default 50%, three +10 steps → 80% on Battery Level slider (2A19).
 context platform=android
 open com.bleperipheraldemo
-wait 1500
-scrollintoview 'id=peripheral-char-2a19-slider-plus-step'
-click 'id=peripheral-char-2a19-slider-plus-step'
+wait 2000
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+click "label=\"Peripheral battery plus ten\""
 wait 500
-click 'id=peripheral-char-2a19-slider-plus-step'
+click "label=\"Peripheral battery plus ten\""
 wait 500
-click 'id=peripheral-char-2a19-slider-plus-step'
+click "label=\"Peripheral battery plus ten\""
 wait 2500

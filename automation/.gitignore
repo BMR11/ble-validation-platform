@@ -1,2 +1,5 @@
 node_modules/
 .agent-device/
+# Local overrides (example tracked as .env.example)
+.env
+.env.local
