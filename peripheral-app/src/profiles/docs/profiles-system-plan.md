@@ -10,7 +10,7 @@
 ## 1. Terminology
 
 - **Profile**: A JSON file that fully describes a BLE peripheral device to emulate (its advertised name, GATT services, characteristics, values, simulation behaviors, and state machine). Analogous to Bluetooth SIG "profiles" (Heart Rate Profile, HID Profile, etc.).
-- **Profile Engine**: The **fully generic** runtime module that reads ANY profile JSON and translates it into `react-native-ble-peripheral-manager` API calls. Contains ZERO profile-specific logic.
+- **Profile Engine**: The **fully generic** runtime module that reads ANY profile JSON and translates it into `rn-ble-peripheral-module` API calls. Contains ZERO profile-specific logic.
 - **State Machine**: An optional declarative definition of device states (e.g. `idle`, `active`, `error`, `charging`) with transitions triggered by BLE events or user actions. Characteristics can behave differently per state.
 - **State Override**: Per-state configuration for a characteristic -- can override simulation, value, read/write behavior. Merged on top of the characteristic's base config when the state machine enters that state.
 - **Simulation**: Optional automatic value generation for a characteristic (e.g. heart rate fluctuating, battery draining) driven by timers. State-aware: can be enabled/disabled/reconfigured per state.
@@ -35,7 +35,7 @@ flowchart LR
     Executor["ProfileExecutor\n(GATT setup + advertising)"]
     Sim["SimulationRunner\n(timers + value generation)"]
   end
-  subgraph lib [react-native-ble-peripheral-manager]
+  subgraph lib [rn-ble-peripheral-module]
     API["addService, addCharacteristic,\nstartAdvertising, updateValue,\nrespondToRequest"]
   end
   subgraph ui [Example App UI]
@@ -1757,7 +1757,7 @@ To compare legacy vs profile output:
 ## 17. Future Considerations
 
 - **Cloud-hosted profiles**: Load profile JSON from a URL instead of bundled files. The `loadProfile()` API already accepts plain objects, so fetching JSON from a server requires minimal changes.
-- **Standalone package**: Extract `profiles/` into its own npm package (e.g. `@ble-peripheral/profiles`) with `react-native-ble-peripheral-manager` as a peer dependency.
+- **Standalone package**: Extract `profiles/` into its own npm package (e.g. `@ble-peripheral/profiles`) with `rn-ble-peripheral-module` as a peer dependency.
 - **Profile editor UI**: A screen in the app to create/edit profiles visually instead of writing JSON by hand.
 - **Profile sharing**: Export/import profiles via QR code, deep link, or file sharing.
 - **More simulation types**: Waveform patterns, recorded data replay, conditional logic.
@@ -1911,7 +1911,7 @@ Deep dive into how the engine works internally. Audience: developers maintaining
        EU["EncodingUtils"]
      end
      subgraph external [External Dependencies]
-       Lib["react-native-ble-peripheral-manager"]
+       Lib["rn-ble-peripheral-module"]
        App["ProfileApp.tsx (React)"]
      end
      PE --> SMR

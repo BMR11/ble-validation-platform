@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-A **profile** is a single JSON file that fully describes a BLE peripheral device to emulate. The [ProfileEngine](../profileEngine.ts) reads any valid profile JSON and translates it into `react-native-ble-peripheral-manager` API calls -- no profile-specific code required.
+A **profile** is a single JSON file that fully describes a BLE peripheral device to emulate. The [ProfileEngine](../profileEngine.ts) reads any valid profile JSON and translates it into `rn-ble-peripheral-module` API calls -- no profile-specific code required.
 
 ```mermaid
 flowchart LR

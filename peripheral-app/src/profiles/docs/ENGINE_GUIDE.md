@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-The Profile Engine is a **fully generic** runtime that reads any profile JSON and translates it into `react-native-ble-peripheral-manager` API calls. It contains zero profile-specific logic -- all behavior is driven by the JSON schema.
+The Profile Engine is a **fully generic** runtime that reads any profile JSON and translates it into `rn-ble-peripheral-module` API calls. It contains zero profile-specific logic -- all behavior is driven by the JSON schema.
 
 ```mermaid
 flowchart TD
@@ -18,7 +18,7 @@ flowchart TD
     EU["EncodingUtils"]
   end
   subgraph external [External]
-    Lib["react-native-ble-peripheral-manager"]
+    Lib["rn-ble-peripheral-module"]
     App["ProfileApp.tsx (React)"]
   end
   PE --> SMR

@@ -11,7 +11,7 @@ BLE development and QA usually depend on **physical hardware** for every scenari
 This repo provides:
 
 - **JSON profiles** under [`profiles/local/`](profiles/local/) (and optional remote copies) that describe services, characteristics, advertising, optional state machines, and UI hints.
-- A **peripheral** React Native app that loads those profiles (local bundle or HTTP), applies `valueGenerator` expansion, and runs them through `react-native-ble-peripheral-manager` (logic migrated from the upstream example on branch `test-pripheral-config-profile-mar23`).
+- A **peripheral** React Native app that loads those profiles (local bundle or HTTP), applies `valueGenerator` expansion, and runs them through `rn-ble-peripheral-module` (logic migrated from the upstream example on branch `test-pripheral-config-profile-mar23`).
 - A **central** React Native app using `react-native-ble-manager` to scan, connect, subscribe, and write — proving end-to-end communication.
 - **`remote-profile/`** — Vite + Express demo for **server-driven profiles**: version, publish, and pull **latest published** JSON by `profileId` into the peripheral without changing app code.
 
@@ -65,7 +65,7 @@ Requirements: **Node 18+**, **JDK 17** (for Android), Xcode + CocoaPods for iOS 
 
    Edit **`.env`**: set **`REMOTE_PROFILE_LAN_HOST`** for a physical phone on Wi‑Fi (see [docs/remote-profiles.md](docs/remote-profiles.md)). Never commit **`.env`**.
 
-   The app depends on the local library via `file:../../react-native-ble-peripheral-manager` (sibling of this demo folder inside `RN_Ble_Peripheral`).
+   The app depends on the local library via `file:../local_modules/rn-ble-peripheral-module` (from `peripheral-app/`).
 
 2. **Central**
 
@@ -171,7 +171,7 @@ Short version:
 
 ## License / upstream
 
-Peripheral BLE engine and types are derived from the **`react-native-ble-peripheral-manager`** example (branch `test-pripheral-config-profile-mar23`). This demo repo is standalone; the library source itself is not modified here.
+Peripheral BLE engine and types live in the vendored **`rn-ble-peripheral-module`** package under [`local_modules/rn-ble-peripheral-module`](local_modules/rn-ble-peripheral-module).
 
 ## Git
 

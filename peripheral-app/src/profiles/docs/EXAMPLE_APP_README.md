@@ -6,7 +6,7 @@
 
 ## 1. Overview
 
-The example app demonstrates the `react-native-ble-peripheral-manager` library with two modes:
+The example app demonstrates the `rn-ble-peripheral-module` library with two modes:
 
 - **Legacy Mode**: Original hardcoded Heart Rate / LBS implementation
 - **Profile Mode**: JSON-driven profile-based implementation with simulation and state machines

@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Two BLE-capable devices (or one phone + one tablet), **or** one central device and one Android peripheral.
-- **Peripheral**: `peripheral-app` targets **Android** (`react-native-ble-peripheral-manager` peripheral APIs).
+- **Peripheral**: `peripheral-app` targets **Android** (`rn-ble-peripheral-module` peripheral APIs).
 - **Central**: `central-app` on **iOS or Android** with Bluetooth enabled.
 - Repo paths: install JS deps in **each** app folder (`peripheral-app`, `central-app`).
 
