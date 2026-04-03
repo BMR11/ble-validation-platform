@@ -1,0 +1,5 @@
+# After peripheral raised battery by 10%; central should display 60%.
+context platform=ios
+open org.reactjs.native.example.BleCentralDemo
+wait 2000
+find text "Battery: 60%" exists

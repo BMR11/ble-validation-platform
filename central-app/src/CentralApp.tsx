@@ -13,7 +13,7 @@ import {
 import BleManager, { BleScanMode } from 'react-native-ble-manager';
 import type { Peripheral } from 'react-native-ble-manager';
 import { DEMO_TARGETS, type DemoTargetId } from './centralTargets';
-import { normUuid } from './uuid';
+import { normUuid, toShortUuid4 } from './uuid';
 
 type LogType = 'info' | 'event' | 'error' | 'data';
 
@@ -104,8 +104,9 @@ function matchesTarget(
 
 export default function CentralApp() {
   const [logs, setLogs] = useState<LogRow[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
   const [bleOk, setBleOk] = useState(false);
-  const [targetId, setTargetId] = useState<DemoTargetId>('heart-rate-monitor');
+  const [targetId, setTargetId] = useState<DemoTargetId>('nordic-lbs');
   const [scanning, setScanning] = useState(false);
   const [devices, setDevices] = useState<Peripheral[]>([]);
   const [connected, setConnected] = useState<Peripheral | null>(null);
@@ -192,6 +193,13 @@ export default function CentralApp() {
         const line = formatLbsButtonState(v);
         setButtonLine(line);
         addLog('data', `Notify button: ${line}`);
+      }
+      //for lbs battery
+      if (bat && toShortUuid4(bat.level) == ch) {
+        const v = e.value[0] ?? 0;
+        setBatteryLine(`${v}%`);
+        addLog('data', `Notify battery: ${v}%`);
+        return;
       }
     });
     return () => sub.remove();
@@ -300,18 +308,21 @@ export default function CentralApp() {
     async (peripheralId: string) => {
       const lbs = DEMO_TARGETS['nordic-lbs'].services.lbs!;
       const bat = DEMO_TARGETS['nordic-lbs'].services.battery!;
-      await BleManager.retrieveServices(peripheralId);
-      addLog('info', 'Services discovered');
+      const peripheralInfo = await BleManager.retrieveServices(peripheralId);
+      console.log('peripheralInfo', JSON.stringify({peripheralInfo, lbs, bat}));
+      addLog('info', 'Services discovered: ' + JSON.stringify({peripheralInfo, lbs, bat}));
       await BleManager.startNotification(
         peripheralId,
         lbs.service,
         lbs.button
       );
+      addLog('info', `Subscribed: button notification: ${lbs.button}`);
       await BleManager.startNotification(
         peripheralId,
         bat.service,
         bat.level
       );
+      addLog('info', `Subscribed: battery notification: ${bat.level}`);
       try {
         const batBytes = await BleManager.read(
           peripheralId,
@@ -321,6 +332,16 @@ export default function CentralApp() {
         setBatteryLine(`${batBytes[0] ?? 0}%`);
       } catch {
         /* optional */
+      }
+      try {
+        const btnBytes = await BleManager.read(
+          peripheralId,
+          lbs.service,
+          lbs.button
+        );
+        setButtonLine(formatLbsButtonState(btnBytes[0] ?? 0));
+      } catch {
+        /* optional — UI stays at -- until first notify */
       }
       addLog('info', 'Subscribed: button + battery notifications');
     },
@@ -391,151 +412,199 @@ export default function CentralApp() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>BLE Central Demo</Text>
-        <Text style={styles.sub}>
-          Matches peripheral profiles in ../profiles (scan by service UUID).
-        </Text>
-
-        <Text style={styles.section}>Target profile</Text>
-        {(Object.keys(DEMO_TARGETS) as DemoTargetId[]).map((id) => {
-          const sel = targetId === id;
-          return (
-            <TouchableOpacity
-              key={id}
-              testID={`central-target-${id}`}
-              accessibilityLabel={`Central target ${DEMO_TARGETS[id].label}`}
-              style={[styles.card, sel && styles.cardSel]}
-              onPress={() => {
-                setTargetId(id);
-                deviceMapRef.current.clear();
-                setDevices([]);
-                addLog('info', `Target: ${DEMO_TARGETS[id].label}`);
-              }}
-            >
-              <Text style={styles.cardTitle}>{DEMO_TARGETS[id].label}</Text>
-              <Text style={styles.cardHint}>
-                Names: {DEMO_TARGETS[id].nameHints.join(', ')}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-
-        <TouchableOpacity
-          testID="central-scan"
-          accessibilityLabel={scanning ? 'Central scan scanning' : 'Central scan eight seconds'}
-          style={[styles.btn, scanning && styles.btnDisabled]}
-          onPress={handleScan}
-          disabled={!bleOk || scanning}
+      <View style={[styles.main, showLogs && styles.mainWithLogs]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>BLE Central Demo</Text>
+          {/* <Text style={styles.sub}>
+            Matches peripheral profiles in ../profiles (scan by service UUID).
+          </Text> */}
+        </View>
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
         >
-          <Text style={styles.btnText}>
-            {scanning ? 'Scanning…' : 'Scan (8s)'}
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.section}>Target profile</Text>
+          {(Object.keys(DEMO_TARGETS) as DemoTargetId[]).map((id) => {
+            const sel = targetId === id;
+            return (
+              <TouchableOpacity
+                key={id}
+                testID={`central-target-${id}`}
+                accessibilityLabel={`Central target ${DEMO_TARGETS[id].label}`}
+                style={[styles.card, sel && styles.cardSel]}
+                onPress={() => {
+                  setTargetId(id);
+                  deviceMapRef.current.clear();
+                  setDevices([]);
+                  addLog('info', `Target: ${DEMO_TARGETS[id].label}`);
+                }}
+              >
+                <Text style={styles.cardTitle}>{DEMO_TARGETS[id].label}</Text>
+                <Text style={styles.cardHint}>
+                  Names: {DEMO_TARGETS[id].nameHints.join(', ')}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
 
-        <Text style={styles.section}>Devices</Text>
-        {devices.length === 0 ? (
-          <Text style={styles.muted}>No matching peripherals yet.</Text>
-        ) : (
-          devices.map((d) => (
-            <TouchableOpacity
-              key={d.id}
-              testID={`central-device-${d.id}`}
-              accessibilityLabel={`Central device ${d.name || d.id}`}
-              style={styles.deviceRow}
-              onPress={() => handleConnect(d)}
-              disabled={!!connected || busy}
-            >
-              <Text style={styles.deviceName}>{d.name || '(no name)'}</Text>
-              <Text style={styles.deviceId}>{d.id}</Text>
-            </TouchableOpacity>
-          ))
-        )}
-
-        {connected && (
-          <View style={styles.box}>
-            <Text style={styles.section}>Connected</Text>
-            <Text style={styles.mono}>
-              {connected.name || connected.id}
+          <TouchableOpacity
+            testID="central-scan"
+            accessibilityLabel={scanning ? 'Central scan scanning' : 'Central scan eight seconds'}
+            style={[styles.btn, scanning && styles.btnDisabled]}
+            onPress={handleScan}
+            disabled={!bleOk || scanning}
+          >
+            <Text style={styles.btnText}>
+              {scanning ? 'Scanning…' : 'Scan'}
             </Text>
-            {targetId === 'heart-rate-monitor' && (
-              <>
-                <Text testID="central-metric-hr" style={styles.metric}>
-                  HR: {hrLine}
-                </Text>
-                <Text testID="central-metric-battery" style={styles.metric}>
-                  Battery: {batteryLine}
-                </Text>
-              </>
-            )}
-            {targetId === 'nordic-lbs' && (
-              <>
-                <Text testID="central-metric-button" style={styles.metric}>
-                  Button: {buttonLine}
-                </Text>
-                <Text testID="central-metric-battery" style={styles.metric}>
-                  Battery: {batteryLine}
-                </Text>
-                <View style={styles.row}>
-                  <TouchableOpacity
-                    testID="central-led-on"
-                    accessibilityLabel="Central LED on"
-                    style={styles.smallBtn}
-                    onPress={() => writeLed(true)}
-                    disabled={busy}
-                  >
-                    <Text style={styles.btnText}>LED ON</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    testID="central-led-off"
-                    accessibilityLabel="Central LED off"
-                    style={styles.smallBtn}
-                    onPress={() => writeLed(false)}
-                    disabled={busy}
-                  >
-                    <Text style={styles.btnText}>LED OFF</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-            <TouchableOpacity style={styles.btnDanger} onPress={handleDisconnect}>
-              <Text style={styles.btnText}>Disconnect</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.section}>Devices</Text>
+          {devices.length === 0 ? (
+            <Text style={styles.muted}>No matching peripherals yet.</Text>
+          ) : (
+            devices.map((d) => {
+              const deviceTitle = (
+                d.name ||
+                d.advertising?.localName ||
+                ''
+              ).trim();
+              const deviceA11yName = deviceTitle || d.id;
+              return (
+              <TouchableOpacity
+                key={d.id}
+                testID={`central-device-${d.id}`}
+                accessibilityLabel={`Central device ${deviceA11yName}`}
+                style={styles.deviceRow}
+                onPress={() => handleConnect(d)}
+                disabled={!!connected || busy}
+              >
+                <Text style={styles.deviceName}>{deviceTitle || '(no name)'}</Text>
+                <Text style={styles.deviceId}>{d.id}</Text>
+              </TouchableOpacity>
+              );
+            })
+          )}
+
+          {connected && (
+            <View style={styles.box}>
+              <Text style={styles.section}>{`${connected.name || connected.id} Connected`}</Text>
+          
+              {targetId === 'heart-rate-monitor' && (
+                <>
+                  <Text testID="central-metric-hr" style={styles.metric}>
+                    HR: {hrLine}
+                  </Text>
+                  <Text testID="central-metric-battery" style={styles.metric}>
+                    Battery: {batteryLine}
+                  </Text>
+                </>
+              )}
+              {targetId === 'nordic-lbs' && (
+                <>
+                  <Text testID="central-metric-button" style={styles.metric}>
+                    Button: {buttonLine}
+                  </Text>
+                  <Text testID="central-metric-battery" style={styles.metric}>
+                    Battery: {batteryLine}
+                  </Text>
+                  <View style={styles.row}>
+                    <TouchableOpacity
+                      testID="central-led-on"
+                      accessibilityLabel="Central LED on"
+                      style={styles.smallBtn}
+                      onPress={() => writeLed(true)}
+                      disabled={busy}
+                    >
+                      <Text style={styles.btnText}>LED ON</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      testID="central-led-off"
+                      accessibilityLabel="Central LED off"
+                      style={styles.smallBtn}
+                      onPress={() => writeLed(false)}
+                      disabled={busy}
+                    >
+                      <Text style={styles.btnText}>LED OFF</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+              <TouchableOpacity style={styles.btnDanger} onPress={handleDisconnect}>
+                <Text style={styles.btnText}>Disconnect</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {busy && <ActivityIndicator color="#8ab4d8" style={{ marginTop: 12 }} />}
+        </ScrollView>
+      </View>
+
+      {showLogs && (
+        <View style={styles.logPanel}>
+          <View style={styles.logHeader}>
+            <Text style={styles.section}>Logs</Text>
+            <TouchableOpacity onPress={clearLogs}>
+              <Text style={styles.link}>Clear</Text>
             </TouchableOpacity>
           </View>
-        )}
-
-        {busy && <ActivityIndicator color="#8ab4d8" style={{ marginTop: 12 }} />}
-
-        <View style={styles.logHeader}>
-          <Text style={styles.section}>Logs</Text>
-          <TouchableOpacity onPress={clearLogs}>
-            <Text style={styles.link}>Clear</Text>
-          </TouchableOpacity>
+          <ScrollView style={styles.logScroll}>
+            {logs.map((row) => (
+              <Text key={row.id} style={styles.logLine}>
+                <Text style={styles.logTime}>{row.t}</Text>{' '}
+                <Text
+                  style={
+                    row.type === 'error'
+                      ? styles.logErr
+                      : row.type === 'data'
+                        ? styles.logData
+                        : styles.logInfo
+                  }
+                >
+                  {row.message}
+                </Text>
+              </Text>
+            ))}
+          </ScrollView>
         </View>
-        {logs.map((row) => (
-          <Text key={row.id} style={styles.logLine}>
-            <Text style={styles.logTime}>{row.t}</Text>{' '}
-            <Text
-              style={
-                row.type === 'error'
-                  ? styles.logErr
-                  : row.type === 'data'
-                    ? styles.logData
-                    : styles.logInfo
-              }
-            >
-              {row.message}
-            </Text>
-          </Text>
-        ))}
-      </ScrollView>
+      )}
+      <TouchableOpacity
+        testID="central-toggle-logs"
+        accessibilityLabel={showLogs ? 'Hide central logs' : 'Show central logs'}
+        style={styles.fab}
+        onPress={() => setShowLogs((prev) => !prev)}
+      >
+        <Text style={styles.fabText}>{showLogs ? 'Logs–' : 'Logs+'}</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12141a' },
-  scroll: { padding: 16, paddingBottom: 40 },
+  safe: { flex: 1, backgroundColor: '#0f1f3d' },
+  main: {
+    flex: 1,
+  },
+  mainWithLogs: {
+    paddingBottom: '30%',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#1e3a8a',
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 40,
+  },
   title: {
     color: '#eceff4',
     fontSize: 22,
@@ -557,10 +626,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#2d323c',
+    flexDirection: 'row',
   },
   cardSel: { borderColor: '#4a7ab0', backgroundColor: '#1a2228' },
   cardTitle: { color: '#e4e7ec', fontSize: 16, fontWeight: '600' },
-  cardHint: { color: '#8b949e', fontSize: 12, marginTop: 4 },
+  cardHint: { color: '#8b949e', fontSize: 12, marginTop: 4, marginLeft: 4 },
   btn: {
     marginTop: 12,
     backgroundColor: '#1e3d2a',
@@ -621,4 +691,41 @@ const styles = StyleSheet.create({
   logInfo: { color: '#c9d1d9', fontSize: 12 },
   logErr: { color: '#f59e9b', fontSize: 12 },
   logData: { color: '#86efac', fontSize: 12 },
+  logPanel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '30%',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: '#0a162c',
+    borderTopWidth: 1,
+    borderTopColor: '#1e3a8a',
+  },
+  logScroll: {
+    marginTop: 4,
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#1e3a8a',
+    borderWidth: 1,
+    borderColor: '#2563eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  fabText: {
+    color: '#e5e7eb',
+    fontSize: 13,
+    fontWeight: '600',
+  },
 });

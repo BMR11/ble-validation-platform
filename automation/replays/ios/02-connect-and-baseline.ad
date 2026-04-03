@@ -3,12 +3,11 @@
 context platform=ios
 open org.reactjs.native.example.BleCentralDemo
 wait 2000
-click 'id=central-target-nordic-lbs'
+click "id=central-target-nordic-lbs"
 wait 500
-click 'id=central-scan'
+click "id=central-scan"
 wait 9500
-scrollintoview 'label="Central device My_LBS"'
-click 'label="Central device My_LBS"'
-wait 8000
+click "label=\"Central device My_LBS\""
+wait 18000
 find text "Button: Released" exists
 find text "Battery: 50%" exists

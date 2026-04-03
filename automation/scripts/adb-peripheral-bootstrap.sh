@@ -17,18 +17,29 @@ ble_automation_load_env "${AUTO_DIR}/.env"
 
 PKG="${ANDROID_PERIPHERAL_PACKAGE:-com.bleperipheraldemo}"
 
+_adb() {
+  if [[ -n "${ANDROID_SERIAL:-}" ]]; then
+    adb -s "${ANDROID_SERIAL}" "$@"
+  else
+    adb "$@"
+  fi
+}
+
 echo "[adb-peripheral-bootstrap] Waiting for Android device…"
-adb wait-for-device
+_adb wait-for-device
+
+echo "[adb-peripheral-bootstrap] Force-stop ${PKG} (clean slate before this run)"
+_adb shell am force-stop "$PKG" 2>/dev/null || true
 
 echo "[adb-peripheral-bootstrap] Granting Bluetooth permissions (best-effort)…"
 for perm in \
   android.permission.BLUETOOTH_ADVERTISE \
   android.permission.BLUETOOTH_CONNECT \
   android.permission.BLUETOOTH_SCAN; do
-  adb shell pm grant "$PKG" "$perm" 2>/dev/null || true
+  _adb shell pm grant "$PKG" "$perm" 2>/dev/null || true
 done
 
 echo "[adb-peripheral-bootstrap] Launching package ${PKG} (launcher via monkey — works for debug + release applicationId)"
-adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
+_adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
 
 echo "[adb-peripheral-bootstrap] Done. Use agent-device (Android session) or tap UI to select Nordic LBS and Start."

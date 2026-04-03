@@ -17,6 +17,7 @@ import {
   PermissionsAndroid,
   Switch,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
 import {
   ManagerState,
@@ -46,6 +47,10 @@ import { LBS_LED_CHAR_UUID } from './constants/bleUuids';
 
 /** Unicode U+1F4A1 (electric light bulb) — dims via opacity when LED off, glow when on */
 const BULB_EMOJI = '\u{1F4A1}';
+
+/** Default local profile for first paint and when returning from Remote source. */
+const DEFAULT_LOCAL_PROFILE =
+  BUNDLED_PROFILES.find((p) => p.id === 'nordic-lbs') ?? null;
 
 function normUuid(u: string): string {
   return u.replace(/-/g, '').toLowerCase();
@@ -78,7 +83,9 @@ function ledLitFromDisplay(
 }
 
 export default function ProfileApp() {
+  const { height: windowHeight } = useWindowDimensions();
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
   const logIdRef = useRef(0);
 
   const [currentManagerState, setCurrentManagerState] = useState<number>(
@@ -86,7 +93,7 @@ export default function ProfileApp() {
   );
   const [isAdvertising, setIsAdvertising] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<BleProfile | null>(
-    null
+    () => DEFAULT_LOCAL_PROFILE
   );
   const [activeProfile, setActiveProfile] = useState<BleProfile | null>(null);
   const [charValues, setCharValues] = useState<Map<string, number | number[] | string>>(
@@ -545,8 +552,8 @@ export default function ProfileApp() {
             onValueChange={(newVal) =>
               handleValueChange(serviceUUID, charUUID, newVal ? 1 : 0)
             }
-            trackColor={{ false: '#2d323c', true: '#2d4a38' }}
-            thumbColor={isOn ? '#6b9b7a' : '#4b5563'}
+            trackColor={{ false: '#352848', true: '#3d2d52' }}
+            thumbColor={isOn ? '#a78bfa' : '#6b5a7a'}
           />
         </View>
       </View>
@@ -577,9 +584,18 @@ export default function ProfileApp() {
             <Text
               style={[styles.ledVerbal, lit ? styles.ledVerbalOn : styles.ledVerbalOff]}
             >
-              {lit ? 'On' : 'Dim'}
+              {lit ? 'LED: ON' : 'LED: OFF'}
             </Text>
           </View>
+          {/* <Text
+            testID="peripheral-lbs-led-state-text"
+            accessibilityLabel={
+              lit ? 'Peripheral LED automation ON' : 'Peripheral LED automation OFF'
+            }
+            style={styles.ledAutomationText}
+          >
+            {`LED: ${lit ? 'ON' : 'OFF'}`}
+          </Text> */}
         </View>
       );
     }
@@ -598,33 +614,42 @@ export default function ProfileApp() {
 
   return (
     <SafeAreaView style={appStyles.container}>
-      {/* Header */}
-      <View style={appStyles.header}>
-        <View style={styles.headerRow}>
-          <Text style={appStyles.title}>BLE Peripheral Emulator</Text>
-        </View>
-        <View style={appStyles.statusRow}>
-          <Text style={appStyles.statusLabel}>
-            ManagerState: {getStateDescription(currentManagerState)}
-          </Text>
-          <View
-            style={[
-              appStyles.statusDot,
-              isAdvertising
-                ? appStyles.statusDotAdvertising
-                : currentManagerState === ManagerState.PoweredOn
-                  ? appStyles.statusDotPoweredOn
-                  : appStyles.statusDotError,
-            ]}
-          />
-        </View>
-      </View>
-
-      <ScrollView
-        style={appStyles.controlsContainer}
-        contentContainerStyle={appStyles.controlsContent}
-        showsVerticalScrollIndicator={false}
+      <View
+        style={[
+          styles.mainArea,
+          showLogs && { paddingBottom: windowHeight * 0.3 },
+        ]}
       >
+        {/* Header */}
+        <View style={appStyles.header}>
+          <View style={styles.headerRow}>
+            <Text style={appStyles.title}>BLE Peripheral Emulator</Text>
+          </View>
+          <View style={appStyles.statusRow}>
+            <Text style={appStyles.statusLabel}>
+              ManagerState: {getStateDescription(currentManagerState)}
+            </Text>
+            <View
+              style={[
+                appStyles.statusDot,
+                isAdvertising
+                  ? appStyles.statusDotAdvertising
+                  : currentManagerState === ManagerState.PoweredOn
+                    ? appStyles.statusDotPoweredOn
+                    : appStyles.statusDotError,
+              ]}
+            />
+          </View>
+        </View>
+
+        <ScrollView
+          style={[appStyles.controlsContainer, styles.scrollArea]}
+          contentContainerStyle={[appStyles.controlsContent, styles.scrollContent]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
+          nestedScrollEnabled
+          bounces
+        >
         {/* Profile picker + start (when not advertising a profile) */}
         {!activeProfile && (
           <>
@@ -638,7 +663,7 @@ export default function ProfileApp() {
                 ]}
                 onPress={() => {
                   setProfileSource('local');
-                  setSelectedProfile(null);
+                  setSelectedProfile(DEFAULT_LOCAL_PROFILE);
                 }}
                 activeOpacity={0.7}
               >
@@ -673,11 +698,15 @@ export default function ProfileApp() {
                 </Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.remoteBaseHint}>{REMOTE_PROFILE_API_BASE}</Text>
-            <Text style={styles.remoteBaseHint}>
-              Physical device: set REMOTE_PROFILE_LAN_HOST in peripheral-app/.env (see .env.example),
-              then restart Metro with cache reset if needed.
-            </Text>
+            {profileSource === 'remote' && (
+              <>
+                <Text style={styles.remoteBaseHint}>{REMOTE_PROFILE_API_BASE}</Text>
+                <Text style={styles.remoteBaseHint}>
+                  Physical device: set REMOTE_PROFILE_LAN_HOST in peripheral-app/.env (see .env.example),
+                  then restart Metro with cache reset if needed.
+                </Text>
+              </>
+            )}
 
             <Text style={appStyles.sectionTitle}>Select profile</Text>
             {profileSource === 'local' &&
@@ -796,8 +825,26 @@ export default function ProfileApp() {
               </TouchableOpacity>
             </View>
 
-            {/* State Machine Indicator */}
-            {currentStateDef && (
+            {/* Dynamic Characteristic Controls */}
+            {activeProfile.services.map((svc) => {
+              const controlChars = svc.characteristics.filter((c) => c.ui);
+              if (controlChars.length === 0) {
+                return null;
+              }
+              return (
+                <View key={svc.uuid} style={styles.serviceSection}>
+                  <Text style={appStyles.sectionTitle}>
+                    {svc.name || svc.uuid}
+                  </Text>
+                  {controlChars.map((char) =>
+                    renderCharacteristicControl(char, svc.uuid)
+                  )}
+                </View>
+              );
+            })}
+
+             {/* State Machine Indicator */}
+             {currentStateDef && (
               <View style={styles.stateContainer}>
                 <View style={styles.stateBadge}>
                   <Text style={styles.stateBadgeText}>
@@ -829,29 +876,27 @@ export default function ProfileApp() {
                 )}
               </View>
             )}
-
-            {/* Dynamic Characteristic Controls */}
-            {activeProfile.services.map((svc) => {
-              const controlChars = svc.characteristics.filter((c) => c.ui);
-              if (controlChars.length === 0) {
-                return null;
-              }
-              return (
-                <View key={svc.uuid} style={styles.serviceSection}>
-                  <Text style={appStyles.sectionTitle}>
-                    {svc.name || svc.uuid}
-                  </Text>
-                  {controlChars.map((char) =>
-                    renderCharacteristicControl(char, svc.uuid)
-                  )}
-                </View>
-              );
-            })}
           </>
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
-      <DebugLogPanel logs={logs} onClear={clearLogs} />
+      {showLogs && (
+        <View style={styles.logPanel}>
+          <View style={styles.logPanelInner}>
+            <DebugLogPanel logs={logs} onClear={clearLogs} />
+          </View>
+        </View>
+      )}
+
+      <TouchableOpacity
+        testID="peripheral-toggle-logs"
+        accessibilityLabel={showLogs ? 'Hide peripheral logs' : 'Show peripheral logs'}
+        style={styles.logFab}
+        onPress={() => setShowLogs((prev) => !prev)}
+      >
+        <Text style={styles.logFabText}>{showLogs ? 'Logs–' : 'Logs+'}</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -859,6 +904,56 @@ export default function ProfileApp() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  mainArea: {
+    flex: 1,
+    minHeight: 0,
+  },
+  /** Fills space below fixed header so inner profile controls scroll. */
+  scrollArea: {
+    flex: 1,
+    minHeight: 0,
+    flexShrink: 1,
+  },
+  scrollContent: {
+    paddingTop: 8,
+    paddingBottom: 40,
+  },
+  logPanel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '70%',
+    bottom: 0,
+    backgroundColor: '#0c0614',
+    borderTopWidth: 1,
+    borderTopColor: '#4a3d62',
+    zIndex: 10,
+  },
+  logPanelInner: {
+    flex: 1,
+  },
+  logFab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#4c2889',
+    borderWidth: 1,
+    borderColor: '#7c3aed',
+    zIndex: 11,
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  logFabText: {
+    color: '#e5e7eb',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -873,13 +968,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
   },
   sourceChipSelected: {
-    borderColor: '#4a7ab0',
-    backgroundColor: '#1a2228',
+    borderColor: '#8b7cbd',
+    backgroundColor: '#241a30',
   },
   sourceChipText: {
     color: '#8b949e',
@@ -899,9 +994,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#1a2430',
+    backgroundColor: '#221a34',
     borderWidth: 1,
-    borderColor: '#3d5a6e',
+    borderColor: '#4a3d62',
     alignItems: 'center',
   },
   fetchRemoteButtonText: {
@@ -913,31 +1008,31 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   profileCard: {
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderRadius: 10,
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
   },
   profileCardSelected: {
-    borderColor: '#4a7ab0',
-    backgroundColor: '#1a2228',
+    borderColor: '#8b7cbd',
+    backgroundColor: '#241a30',
   },
   startButton: {
     marginTop: 12,
     paddingVertical: 14,
     borderRadius: 10,
-    backgroundColor: '#1e3d2a',
+    backgroundColor: '#2d1f42',
     borderWidth: 1,
-    borderColor: '#3d6b4f',
+    borderColor: '#5a4480',
     alignItems: 'center',
   },
   startButtonDisabled: {
     opacity: 0.45,
   },
   startButtonText: {
-    color: '#c8e6d0',
+    color: '#e9d5ff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -970,9 +1065,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#221a1c',
+    backgroundColor: '#2a1a2c',
     borderWidth: 1,
-    borderColor: '#5a4548',
+    borderColor: '#5a3d50',
     marginLeft: 12,
   },
   stopButtonText: {
@@ -981,21 +1076,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   stateContainer: {
-    backgroundColor: '#16181f',
+    backgroundColor: '#1a1224',
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
   },
   stateBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#1a2430',
+    backgroundColor: '#221a34',
     borderWidth: 1,
-    borderColor: '#3d5a6e',
+    borderColor: '#4a3d62',
     marginBottom: 6,
   },
   stateBadgeText: {
@@ -1018,9 +1113,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: '#1e2129',
+    backgroundColor: '#1e182c',
     borderWidth: 1,
-    borderColor: '#353b4a',
+    borderColor: '#3a3550',
   },
   transitionButtonText: {
     color: '#d1d5db',
@@ -1028,12 +1123,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   serviceSection: {
-    backgroundColor: '#16181f',
+    backgroundColor: '#1a1224',
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
   },
   charControl: {
     marginBottom: 12,
@@ -1055,9 +1150,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 8,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderWidth: 1,
-    borderColor: '#353b4a',
+    borderColor: '#3a3550',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1092,9 +1187,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 32,
     borderRadius: 6,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderWidth: 1,
-    borderColor: '#3d4a5c',
+    borderColor: '#453d5c',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1111,21 +1206,21 @@ const styles = StyleSheet.create({
   sliderBarBg: {
     width: '100%',
     height: 20,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
     overflow: 'hidden',
   },
   sliderBarFill: {
     height: '100%',
-    backgroundColor: '#5a7a6a',
+    backgroundColor: '#6b5a8a',
     borderRadius: 5,
   },
   sliderValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#a8b5a8',
+    color: '#c4b8d4',
     marginTop: 4,
   },
   toggleRow: {
@@ -1172,5 +1267,11 @@ const styles = StyleSheet.create({
   },
   ledVerbalOn: {
     color: '#e8d089',
+  },
+  ledAutomationText: {
+    marginTop: 6,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#c4b5fd',
   },
 });

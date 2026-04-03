@@ -8,9 +8,9 @@
     "deviceName": "My_LBS"
   },
   "deviceInfo": {
-    "manufacturerName": "Demo Manufacturer",
-    "modelNumber": "RN-BLE-Peripheral-001",
-    "serialNumber": "DEMO-2024-001234",
+    "manufacturerName": "Mfg",
+    "modelNumber": "Model",
+    "serialNumber": "Serial",
     "hardwareRevision": "1.0.0",
     "firmwareRevision": "2.1.0",
     "softwareRevision": "1.0.0"
@@ -118,12 +118,12 @@
       ]
     },
     {
-      "uuid": "180F",
+      "uuid": "0000180F-0000-1000-8000-00805F9B34FB",
       "name": "Battery",
       "primary": true,
       "characteristics": [
         {
-          "uuid": "2A19",
+          "uuid": "00002A19-0000-1000-8000-00805F9B34FB",
           "name": "Battery Level",
           "properties": ["read", "notify"],
           "permissions": ["readable"],

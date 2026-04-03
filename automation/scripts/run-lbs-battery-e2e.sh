@@ -18,7 +18,11 @@ ble_automation_load_env "${AUTO_DIR}/.env"
 
 PERIPH_SESSION="${PERIPH_SESSION:-ble-demo-peripheral}"
 CENT_SESSION_BASE="${CENT_SESSION:-ble-demo-central}"
-CENT_SESSION="${CENT_SESSION_BASE}"
+# agent-device ~0.11: `open --device` with a *named* --session requires --session-lock strip, which
+# then targets Simulator. The working CLI uses no --session (implicit "default") — but while the
+# Android peripheral session exists, "default" cannot drive iOS. We close the peripheral session
+# before each iOS phase, then use IOS_AGENT_SESSION (default) for iOS open + replay.
+IOS_AGENT_SESSION="${IOS_AGENT_SESSION:-default}"
 ANDROID_SERIAL="${ANDROID_SERIAL:-}"
 IOS_UDID="${IOS_UDID:-}"
 # Physical iPhone name (e.g. iPhone-RG). Without IOS_UDID or IOS_DEVICE, agent-device often picks a simulator.
@@ -34,63 +38,49 @@ fi
 
 AD_BASE=(npx --yes --prefix "${AUTO_DIR}" agent-device)
 
-# Map a human iOS device name to the UDID agent-device expects. --device "iPhone-RG" can still
-# route to a Simulator; --udid from a list row with kind=device forces the physical phone.
-ble_resolve_ios_udid_from_name() {
-  local want="$1"
-  ( cd "${AUTO_DIR}" && "${AD_BASE[@]}" devices --json 2>/dev/null ) | python3 -c '
-import json, sys
-want = sys.argv[1]
-try:
-    payload = json.load(sys.stdin)
-except Exception:
-    sys.exit(2)
-devices = (payload.get("data") or {}).get("devices")
-if not isinstance(devices, list):
-    devices = payload.get("devices") or []
-for dev in devices:
-    if dev.get("platform") != "ios" or dev.get("kind") != "device":
-        continue
-    if dev.get("name") != want:
-        continue
-    udid = dev.get("id") or dev.get("udid")
-    if udid:
-        print(udid)
-        sys.exit(0)
-sys.exit(1)
-' "${want}"
-}
+# Physical iPhone: pass --device "Name" (matches Xcode/Finder), not --udid. On some setups
+# `open`/replay with the USB UDID string incorrectly routes to a booted Simulator; the same
+# name used in `agent-device open "App" --platform ios --device "iPhone-RG"` works.
 
-if [[ -n "${IOS_DEVICE:-}" && -z "${IOS_UDID:-}" ]]; then
-  if resolved="$(ble_resolve_ios_udid_from_name "${IOS_DEVICE}")"; then
-    IOS_UDID="${resolved}"
-    export IOS_UDID
-    echo "Resolved IOS_DEVICE='${IOS_DEVICE}' → IOS_UDID=${IOS_UDID} (physical device from agent-device list)" >&2
-  else
-    echo "Error: IOS_DEVICE='${IOS_DEVICE}' did not match any iOS row with kind=device in agent-device JSON." >&2
-    echo "  Unlock the iPhone, trust this Mac, run: (cd ${AUTO_DIR} && npx agent-device devices --json)" >&2
-    echo "  Then set IOS_UDID to the physical device's id or fix the device name." >&2
-    exit 1
-  fi
-fi
-
-# agent-device's device resolver treats udid/deviceName/serial as explicit selection; without them it
-# prefers a Simulator when both exist. Require a real UDID for this BLE flow unless simulator is intentional.
-if [[ "${ALLOW_IOS_SIMULATOR_UNTARGETED:-0}" != "1" && -z "${IOS_UDID:-}" ]]; then
-  echo "Error: IOS_UDID is empty after resolution. Physical runs need the UDID from agent-device (kind=device)." >&2
-  echo "  cd ${AUTO_DIR} && npx agent-device devices --json  # copy id for your iPhone" >&2
-  echo "  Put IOS_UDID=... in automation/.env" >&2
+if [[ "${ALLOW_IOS_SIMULATOR_UNTARGETED:-0}" != "1" && -z "${IOS_UDID:-}" && -z "${IOS_DEVICE:-}" ]]; then
+  echo "Error: Set IOS_DEVICE (e.g. iPhone-RG) or IOS_UDID for the central iPhone." >&2
+  echo "  Prefer IOS_DEVICE=name from: cd ${AUTO_DIR} && npx agent-device devices --json" >&2
   exit 1
 fi
 
-# Unique session per phone so a stale 'ble-demo-central' daemon session cannot keep a Simulator binding.
-if [[ -n "${IOS_UDID:-}" ]]; then
-  _cent_hash="$(printf '%s' "${IOS_UDID}" | python3 -c 'import sys,hashlib; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest()[:10])')"
-  if [[ -n "${_cent_hash}" ]]; then
-    CENT_SESSION="${CENT_SESSION_BASE}-${_cent_hash}"
+export IOS_AGENT_SESSION
+
+ad_adb() {
+  if [[ -n "${ANDROID_SERIAL}" ]]; then
+    adb -s "${ANDROID_SERIAL}" "$@"
+  else
+    adb "$@"
   fi
-fi
-export CENT_SESSION
+}
+
+# Hard-stop peripheral app so the next launch/replay starts cold (no stale GATT/UI state).
+ad_force_stop_peripheral() {
+  echo "[e2e] adb force-stop ${ANDROID_PERIPHERAL_PACKAGE}"
+  ad_adb shell am force-stop "${ANDROID_PERIPHERAL_PACKAGE}" 2>/dev/null || true
+}
+
+ad_close_peripheral() {
+  run_ad android --session "${PERIPH_SESSION}" --platform android close || true
+}
+
+# Close automation sessions and hard-stop the peripheral APK (Android has no session-only "restart").
+ble_e2e_close_sessions_and_stop_peripheral_app() {
+  ad_close_peripheral
+  run_ad ios --session "${IOS_AGENT_SESSION}" close || true
+  run_ad ios --session "${CENT_SESSION_BASE}" close || true
+  ad_force_stop_peripheral
+}
+
+# Start of every run: no stale agent-device sessions or peripheral process from last time.
+e2e_fresh_start_cleanup() {
+  echo "🟡 == 0a) New run: reset sessions + force-stop peripheral (clean slate)"
+  ble_e2e_close_sessions_and_stop_peripheral_app
+}
 
 run_ad() {
   local platform="$1"
@@ -100,19 +90,79 @@ run_ad() {
     cmd+=(--serial "${ANDROID_SERIAL}")
   fi
   if [[ "${platform}" == "ios" ]]; then
-    # Order matters for some CLI paths: platform + target first, then lock + udid (agent-device o7/tt).
     cmd+=(--platform ios --target mobile)
-    if [[ -n "${IOS_UDID}" || -n "${IOS_DEVICE}" ]]; then
-      cmd+=(--session-lock strip)
-    fi
-    if [[ -n "${IOS_UDID}" ]]; then
-      cmd+=(--udid "${IOS_UDID}")
-    elif [[ -n "${IOS_DEVICE}" ]]; then
+    # Do not use --session-lock strip here: with physical --device it routes to Simulator.
+    if [[ -n "${IOS_DEVICE}" ]]; then
       cmd+=(--device "${IOS_DEVICE}")
+    elif [[ -n "${IOS_UDID}" ]]; then
+      cmd+=(--udid "${IOS_UDID}")
     fi
   fi
   cmd+=("$@")
   "${cmd[@]}"
+}
+
+_E2E_TEARDOWN_DONE=0
+# Runs on EXIT (failure, SIGINT/SIGHUP, etc.) so sessions + peripheral app don’t stay dirty for the next run.
+e2e_teardown_on_exit() {
+  if [[ "${E2E_SKIP_EXIT_TEARDOWN:-0}" == "1" ]]; then
+    return 0
+  fi
+  if [[ "${_E2E_TEARDOWN_DONE}" == "1" ]]; then
+    return 0
+  fi
+  _E2E_TEARDOWN_DONE=1
+  echo "🟡 == (exit teardown) Close sessions + force-stop peripheral app" >&2
+  ble_e2e_close_sessions_and_stop_peripheral_app || true
+}
+
+trap 'e2e_teardown_on_exit' EXIT
+
+# agent-device (~0.11): `open` inside `replay` ignores CLI --device/--udid and targets the booted Simulator.
+# Use the same top-level `open` pattern that works on device, then replay a script with that line removed.
+IOS_CENTRAL_DISPLAY_NAME="${IOS_CENTRAL_DISPLAY_NAME:-BleCentralDemo}"
+IOS_CENTRAL_BUNDLE_REPLAY="${IOS_CENTRAL_BUNDLE_REPLAY:-org.reactjs.native.example.BleCentralDemo}"
+# open --relaunch terminates the app first; some devices/agent-device builds fail with "Failed to terminate iOS app".
+E2E_IOS_OPEN_RELAUNCH="${E2E_IOS_OPEN_RELAUNCH:-0}"
+
+run_ios_open_central() {
+  # Exact working shape (no --session): open "BleCentralDemo" --platform ios --device "iPhone-RG"
+  # Requires ad_close_peripheral first so "default" is not blocked by the Android session.
+  local cmd=( "${AD_BASE[@]}" )
+  cmd+=(open "${IOS_CENTRAL_DISPLAY_NAME}")
+  cmd+=(--platform ios)
+  if [[ -n "${IOS_DEVICE}" ]]; then
+    cmd+=(--device "${IOS_DEVICE}")
+  elif [[ -n "${IOS_UDID}" ]]; then
+    cmd+=(--udid "${IOS_UDID}")
+  fi
+  if [[ "${E2E_IOS_OPEN_RELAUNCH}" == "1" ]]; then
+    cmd+=(--relaunch)
+  fi
+  "${cmd[@]}"
+}
+
+ios_replay_strip_open() {
+  local src="$1"
+  local tmp="$2"
+  local bundle="${IOS_CENTRAL_BUNDLE_REPLAY}"
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    if [[ "${line}" == "open ${bundle}" ]]; then
+      continue
+    fi
+    printf '%s\n' "${line}"
+  done <"${src}" >"${tmp}"
+}
+
+ios_replay() {
+  local src="$1"
+  local tmp
+  tmp="$(mktemp "${TMPDIR:-/tmp}/ble-demo-ios-replay.XXXXXX")"
+  ios_replay_strip_open "${src}" "${tmp}"
+  ad_close_peripheral
+  run_ios_open_central
+  run_ad ios --session "${IOS_AGENT_SESSION}" replay "${tmp}"
+  rm -f "${tmp}"
 }
 
 # Android .ad files use "open com.bleperipheraldemo"; substitute release (or custom) package id.
@@ -122,45 +172,47 @@ android_replay() {
   # macOS mktemp requires the template to end with XXXXXX (no suffix after it).
   tmp="$(mktemp "${TMPDIR:-/tmp}/ble-demo-android-replay.XXXXXX")"
   sed "s/^open com\\.bleperipheraldemo$/open ${ANDROID_PERIPHERAL_PACKAGE}/g" "$src" >"$tmp"
+  ad_force_stop_peripheral
   run_ad android --session "${PERIPH_SESSION}" --platform android replay "$tmp"
   rm -f "$tmp"
 }
 
-# The daemon persists named sessions; `open` reuses an existing session's device. Close base name (legacy)
-# and the effective session before replays.
-echo "== 0a) iOS: close stale central sessions '${CENT_SESSION_BASE}' / '${CENT_SESSION}' if any"
-run_ad ios --session "${CENT_SESSION_BASE}" close || true
-if [[ "${CENT_SESSION}" != "${CENT_SESSION_BASE}" ]]; then
-  run_ad ios --session "${CENT_SESSION}" close || true
-fi
+e2e_fresh_start_cleanup
 
-echo "== 0) adb (automated): launch peripheral package + BLE permission grants"
+echo "🟡 == 0b) iOS: open central (${IOS_AGENT_SESSION}); E2E_IOS_OPEN_RELAUNCH=${E2E_IOS_OPEN_RELAUNCH}"
+run_ios_open_central
+
+echo "🟡 == 0) adb (automated): launch peripheral package + BLE permission grants"
 if [[ "${SKIP_ADB_BOOTSTRAP:-0}" != "1" ]]; then
   bash "${SCRIPT_DIR}/adb-peripheral-bootstrap.sh"
 else
   echo "    (skipped SKIP_ADB_BOOTSTRAP=1)"
 fi
 
-echo "== 1) agent-device Android replay: 01-start-nordic-lbs.ad (open → Nordic LBS → Start)"
+echo "🟡 == 1) agent-device Android replay: 01-start-nordic-lbs.ad (open → Nordic LBS → Start)"
 android_replay "${AUTO_DIR}/replays/android/01-start-nordic-lbs.ad"
 
-echo "== 2) agent-device iOS replay: 02-connect-and-baseline.ad (session=${CENT_SESSION})"
-run_ad ios --session "${CENT_SESSION}" replay "${AUTO_DIR}/replays/ios/02-connect-and-baseline.ad"
+echo "🟡 == 2) iOS: connect + baseline (Button: Released, Battery: 50%) — 02-connect-and-baseline.ad"
+ios_replay "${AUTO_DIR}/replays/ios/02-connect-and-baseline.ad"
 
-echo "== 3) agent-device Android replay: 03-toggle-lbs-button.ad"
+echo "🟡 == 3) Android: peripheral battery +10 (50→60); 4) iOS: assert Battery: 60%"
+android_replay "${AUTO_DIR}/replays/android/peripheral-battery-plus-10-once.ad"
+ios_replay "${AUTO_DIR}/replays/ios/central-assert-battery-60.ad"
+
+echo "🟡 == 5) Android: toggle LBS button; 6) iOS: assert Button: Pressed"
 android_replay "${AUTO_DIR}/replays/android/03-toggle-lbs-button.ad"
+ios_replay "${AUTO_DIR}/replays/ios/04-assert-button-pressed.ad"
 
-echo "== 4) agent-device iOS replay: 04-assert-button-pressed.ad"
-run_ad ios --session "${CENT_SESSION}" replay "${AUTO_DIR}/replays/ios/04-assert-button-pressed.ad"
+echo "🟡 == 7) iOS: LED ON; 8) Android: assert peripheral LED: ON"
+ios_replay "${AUTO_DIR}/replays/ios/central-led-on.ad"
+android_replay "${AUTO_DIR}/replays/android/peripheral-assert-led-on.ad"
 
-echo "== 5) agent-device Android replay: 05-battery-to-80.ad"
-android_replay "${AUTO_DIR}/replays/android/05-battery-to-80.ad"
+echo "🟡 == 9) iOS: LED OFF; 10) Android: assert peripheral LED: OFF"
+ios_replay "${AUTO_DIR}/replays/ios/central-led-off.ad"
+android_replay "${AUTO_DIR}/replays/android/peripheral-assert-led-off.ad"
 
-echo "== 6) agent-device iOS replay: 06-assert-battery-80.ad"
-run_ad ios --session "${CENT_SESSION}" replay "${AUTO_DIR}/replays/ios/06-assert-battery-80.ad"
-
-echo "== 7) agent-device: close named sessions"
-run_ad android --session "${PERIPH_SESSION}" --platform android close || true
-run_ad ios --session "${CENT_SESSION}" close || true
+echo "🟡 == 11) Teardown: close sessions + force-stop peripheral app"
+ble_e2e_close_sessions_and_stop_peripheral_app
+_E2E_TEARDOWN_DONE=1
 
 echo "LBS + battery E2E flow finished OK."

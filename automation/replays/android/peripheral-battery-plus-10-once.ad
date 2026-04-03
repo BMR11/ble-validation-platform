@@ -1,0 +1,14 @@
+# One +10 on Nordic LBS battery (50% → 60%). Central must show Battery: 60% after notify.
+context platform=android
+open com.bleperipheraldemo
+wait 2000
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+click "label=\"Peripheral battery plus ten\""
+wait 3000

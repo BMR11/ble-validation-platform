@@ -16,13 +16,13 @@ const elevated = Platform.select({
 /** Subtle raised “plate”: light top/left edge, darker bottom/right */
 const embossed = {
   borderTopWidth: StyleSheet.hairlineWidth,
-  borderTopColor: '#3a4254',
+  borderTopColor: '#4a3d5c',
   borderLeftWidth: StyleSheet.hairlineWidth,
-  borderLeftColor: '#323846',
+  borderLeftColor: '#423556',
   borderRightWidth: StyleSheet.hairlineWidth,
-  borderRightColor: '#14151a',
+  borderRightColor: '#1a1422',
   borderBottomWidth: StyleSheet.hairlineWidth,
-  borderBottomColor: '#0a0b0d',
+  borderBottomColor: '#0c0814',
 };
 
 const elevatedSoft = Platform.select({
@@ -39,13 +39,13 @@ const elevatedSoft = Platform.select({
 
 const embossedInset = {
   borderTopWidth: StyleSheet.hairlineWidth,
-  borderTopColor: '#2f3544',
+  borderTopColor: '#3d3550',
   borderLeftWidth: StyleSheet.hairlineWidth,
-  borderLeftColor: '#2a2f3c',
+  borderLeftColor: '#352848',
   borderRightWidth: StyleSheet.hairlineWidth,
-  borderRightColor: '#101116',
+  borderRightColor: '#120a18',
   borderBottomWidth: StyleSheet.hairlineWidth,
-  borderBottomColor: '#08090b',
+  borderBottomColor: '#08060c',
 };
 
 /** Readable UI sans; logs stay monospace */
@@ -66,7 +66,7 @@ export const appTheme = {
 export const appStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#12141a',
+    backgroundColor: '#120a1a',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     paddingBottom: Platform.OS === 'android' ? 24 : 0,
   },
@@ -74,9 +74,12 @@ export const appStyles = StyleSheet.create({
     ...elevated,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#16181f',
+    paddingBottom: 12,
+    backgroundColor: '#1a0f24',
     ...embossed,
-    marginBottom: 2,
+    marginBottom: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#4a3d62',
     zIndex: 2,
   },
   title: {
@@ -113,8 +116,7 @@ export const appStyles = StyleSheet.create({
     backgroundColor: '#a67a72',
   },
   controlsContainer: {
-    // flex: 1,
-    maxHeight: '60%',
+    flex: 1,
   },
   controlsContent: {
     padding: 16,
@@ -140,7 +142,7 @@ export const appStyles = StyleSheet.create({
     borderRadius: 8,
     minWidth: 80,
     borderWidth: 1,
-    backgroundColor: '#1e2129',
+    backgroundColor: '#1e182c',
   },
   buttonText: {
     fontFamily: ui,
@@ -163,7 +165,7 @@ export const appStyles = StyleSheet.create({
   inputNameField: {
     flex: 1,
     fontFamily: ui,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -172,12 +174,12 @@ export const appStyles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
   },
   input: {
     flex: 1,
     fontFamily: ui,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -185,15 +187,15 @@ export const appStyles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
   },
   logsContainer: {
     ...elevated,
     flex: 1,
-    backgroundColor: '#0e0f12',
+    backgroundColor: '#0b0612',
     ...embossed,
     borderTopWidth: 1,
-    borderTopColor: '#3a4254',
+    borderTopColor: '#3d2f52',
     zIndex: 1,
   },
   logsHeader: {
@@ -203,7 +205,7 @@ export const appStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#2a2f3a',
+    borderBottomColor: '#2d2240',
   },
   logsTitle: {
     fontFamily: ui,
@@ -229,7 +231,7 @@ export const appStyles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#1e2129',
+    borderBottomColor: '#1e1828',
   },
   logType: {
     fontSize: 11,
@@ -251,18 +253,18 @@ export const appStyles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
     gap: 6,
   },
   serviceButtonSelected: {
-    borderColor: '#4a6b7a',
-    backgroundColor: '#1a2228',
+    borderColor: '#6b5a8a',
+    backgroundColor: '#241a30',
   },
   serviceButtonStop: {
-    borderColor: '#5a4548',
-    backgroundColor: '#1f1a1c',
+    borderColor: '#5a3d50',
+    backgroundColor: '#2a1a2c',
     flex: 0.6,
   },
   serviceButtonText: {
@@ -282,7 +284,7 @@ export const appStyles = StyleSheet.create({
   },
   serviceControlsContainer: {
     ...elevated,
-    backgroundColor: '#16181f',
+    backgroundColor: '#1a1224',
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
@@ -307,9 +309,9 @@ export const appStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 8,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderWidth: 1,
-    borderColor: '#353b4a',
+    borderColor: '#3a3550',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -346,7 +348,7 @@ export const appStyles = StyleSheet.create({
   lbsControlItem: {
     ...elevatedSoft,
     flex: 1,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderRadius: 10,
     padding: 12,
     ...embossedInset,
@@ -397,7 +399,7 @@ export const appStyles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#2a2f3a',
+    borderTopColor: '#2d2240',
   },
   batterySliderRow: {
     flexDirection: 'row',
@@ -409,9 +411,9 @@ export const appStyles = StyleSheet.create({
     width: 40,
     height: 32,
     borderRadius: 6,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderWidth: 1,
-    borderColor: '#3d4a5c',
+    borderColor: '#453d5c',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -429,15 +431,15 @@ export const appStyles = StyleSheet.create({
   batteryBarBackground: {
     width: '100%',
     height: 20,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#1e1528',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#352848',
     overflow: 'hidden',
   },
   batteryBarFill: {
     height: '100%',
-    backgroundColor: '#5a7a6a',
+    backgroundColor: '#6b5a8a',
     borderRadius: 5,
   },
   batteryValue: {

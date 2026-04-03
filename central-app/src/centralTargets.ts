@@ -2,10 +2,11 @@
  * Scan/connect targets aligned with `profiles/local/*.json` in the repo root.
  */
 
-import { toFullUuid16 } from './uuid';
+import { Platform } from 'react-native';
+import { toFullUuid16, toShortUuid4 } from './uuid';
 
 export type DemoTargetId = 'heart-rate-monitor' | 'nordic-lbs';
-
+const isiOS = Platform.OS === 'ios';
 export interface DemoTarget {
   readonly id: DemoTargetId;
   readonly label: string;
@@ -24,7 +25,7 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
   'heart-rate-monitor': {
     id: 'heart-rate-monitor',
     label: 'Heart Rate Monitor',
-    nameHints: ['rn_ble_hr_demo', 'my_hr'],
+    nameHints: ['rn_ble_hr_demo'],
     scanServiceUuid: toFullUuid16('180D'),
     services: {
       heartRate: {
@@ -32,8 +33,8 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         measurement: toFullUuid16('2A37'),
       },
       battery: {
-        service: toFullUuid16('180F'),
-        level: toFullUuid16('2A19'),
+        service: isiOS ? '180F' : toFullUuid16('180F'),// For iOS we need shortformat, for android we need full format
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),// For iOS we need shortformat, for android we need full format 
       },
     },
   },
@@ -49,8 +50,8 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         led: '00001525-1212-efde-1523-785feabcd123',
       },
       battery: {
-        service: toFullUuid16('180F'),
-        level: toFullUuid16('2A19'),
+        service: isiOS ? '180F' : toFullUuid16('180F'),// For iOS we need shortformat, for android we need full format
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),// For iOS we need shortformat, for android we need full format
       },
     },
   },

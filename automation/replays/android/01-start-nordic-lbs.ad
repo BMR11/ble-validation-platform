@@ -2,9 +2,11 @@
 context platform=android
 open com.bleperipheraldemo
 wait 2000
-# scroll down
-# wait 400
-click "label=\"Peripheral profile Nordic LED Button Service\""
+scroll down
+wait 400
+scroll down
+wait 400
+click "id=peripheral-profile-nordic-lbs"
 wait 600
 click "label=\"Start peripheral\""
 wait 2000

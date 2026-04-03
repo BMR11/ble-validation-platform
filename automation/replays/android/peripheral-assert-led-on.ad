@@ -1,0 +1,11 @@
+# Assert peripheral reflects central LED ON write.
+context platform=android
+open com.bleperipheraldemo
+wait 2000
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+find text "LED: ON" exists
