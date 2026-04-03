@@ -2,7 +2,7 @@
  * Encoding Utilities
  *
  * Pure functions for converting profile value definitions to base64 strings
- * compatible with react-native-ble-peripheral-manager APIs.
+ * compatible with rn-ble-peripheral-module APIs.
  *
  * All functions are stateless and side-effect free.
  */

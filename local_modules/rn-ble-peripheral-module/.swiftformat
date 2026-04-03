@@ -1,0 +1,10 @@
+# SwiftFormat Configuration File
+# This is the default configuration. You can customize rules as needed.
+
+# Uncomment to enable/disable rules
+--disable blankLinesAroundMark
+--enable trailingCommas
+
+# Excluded paths (uncomment to exclude files/folders)
+--exclude Carthage
+--exclude Pods

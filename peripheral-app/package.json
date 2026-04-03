@@ -14,7 +14,7 @@
   "dependencies": {
     "react": "19.0.0",
     "react-native": "0.79.2",
-    "react-native-ble-peripheral-manager": "file:../../react-native-ble-peripheral-manager"
+    "rn-ble-peripheral-module": "file:../local_modules/rn-ble-peripheral-module"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

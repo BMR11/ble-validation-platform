@@ -14,7 +14,7 @@ import {
   CharacteristicProperties,
   CharacteristicPermissions,
   ATTError,
-} from 'react-native-ble-peripheral-manager';
+} from 'rn-ble-peripheral-module';
 
 // ─── Top-Level Profile ───────────────────────────────────────────────────────
 

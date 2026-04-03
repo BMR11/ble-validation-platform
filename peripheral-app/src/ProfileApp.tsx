@@ -24,7 +24,7 @@ import {
   onDidUpdateState,
   getStateDescription,
   type EventDidUpdateState,
-} from 'react-native-ble-peripheral-manager';
+} from 'rn-ble-peripheral-module';
 
 import { ProfileEngine } from './profiles/profileEngine';
 import { BUNDLED_PROFILES } from './profiles/profileRegistry';
