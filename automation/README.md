@@ -29,6 +29,14 @@ Optional: extend battery to **80%** with the legacy replays `05-battery-to-80.ad
 - On first use, macOS may prompt for **Accessibility** and related permissions for the helper that drives simulators/devices—approve those or UI automation will fail silently.
 - This repo pins the CLI under `automation/node_modules` (see Part 2). You can also install globally: `npm install -g agent-device`.
 
+**Reset stuck daemon state (when sessions feel wrong or devices won’t bind):**
+
+```bash
+rm -f ~/.agent-device/daemon.json ~/.agent-device/daemon.lock
+```
+
+Then run your next `agent-device` command again (the daemon will recreate its files). Use this if you see odd session reuse, stale locks, or after upgrading agent-device.
+
 ### 1.3 Build and install both apps
 
 Do this once per device (or when native code changes).
@@ -263,6 +271,8 @@ Repeat steps in the same order as Part 4.2 if you are debugging a single stage.
 
 ## Part 7 — Troubleshooting
 
+**Learning (iOS):** In our testing, **iOS automation only became reliable after the Automation Agent daemon app was installed on the physical iPhone by building and running it from Xcode** (per agent-device / Callstack setup for the on-device test runner). Relying only on whatever the CLI installs automatically was not enough in that environment—use the Xcode install path for the agent when replays fail to drive the device.
+
 | Symptom | What to try |
 |---------|-------------|
 | **No devices in `adb devices`** | USB cable, debugging authorization, correct mode on phone. |
@@ -275,6 +285,8 @@ Repeat steps in the same order as Part 4.2 if you are debugging a single stage.
 | **`replay cannot override session lock policy with --device`** | Fixed in `run-lbs-battery-e2e.sh` via **`--session-lock strip`** on iOS when `IOS_DEVICE` / `IOS_UDID` is set (named session + device target). Update your script if you run `agent-device replay` manually the same way. |
 | **iOS replay still targets Simulator (ignores `--udid`)** | **agent-device** keeps **named sessions** in the daemon. If `ble-demo-central` already exists from an earlier run, **`open` reuses that session’s device** and does not re-apply CLI `--udid`. The e2e script runs **`close`** on the central session first (step **0a**). Manually: `npx agent-device --session ble-demo-central --platform ios --session-lock strip --udid <UDID> close` (or omit `--udid` for close), then replay; or use a fresh **`CENT_SESSION`** name. |
 | **`open` inside `replay` uses Simulator even with `--device`** | Known limitation in recent **agent-device** builds: nested replay steps do not inherit device selection. **`run-lbs-battery-e2e.sh`** works around this by running a top-level `open "${IOS_CENTRAL_DISPLAY_NAME}" --platform ios --device "…"` (same as your manual CLI), then replaying a temp script with the embedded `open <bundleId>` line removed. Override **`IOS_CENTRAL_DISPLAY_NAME`** / **`IOS_CENTRAL_BUNDLE_REPLAY`** in `.env` if your app label or bundle id differs. |
+| **iOS replays never control the phone / agent seems dead** | Clear daemon state: `rm -f ~/.agent-device/daemon.json ~/.agent-device/daemon.lock`, then retry. Confirm the **Automation Agent** app is on the device (see learning note above); install it via **Xcode** if the automatic install did not work. |
+| **Stale session / wrong device after many runs** | Same as above: `rm -f ~/.agent-device/daemon.json ~/.agent-device/daemon.lock`, or use a fresh **`CENT_SESSION`** / **`IOS_AGENT_SESSION`** name. |
 
 ---
 
