@@ -36,8 +36,10 @@ flowchart LR
 ## Central stack
 
 1. **`BleManager.start`** — initialize the native central manager.
-2. **`scan`** — filter by primary service UUID aligned with the selected demo target (`src/centralTargets.ts`).
-3. **`connect` → `retrieveServices` → `startNotification` / `write`** — interact with heart rate + battery or Nordic LBS characteristics.
+2. **`scan`** — filter by primary service UUID aligned with the selected demo target (`src/centralTargets.ts`). Scan is stopped on connect; the UI blocks another scan or target change until disconnect.
+3. **`connect` → `retrieveServices`** — discover the GATT layout.
+4. **DIS reads** (`src/disRead.ts`) — optional reads of standard Device Information characteristics (0x180A) for the **Info** panel when the peripheral exposes them.
+5. **`startNotification` / `write`** — heart rate + battery notifications, or Nordic LBS button notifications and LED writes (**LED ON** before **LED OFF** in the demo UI).
 
 ## Design choices
 

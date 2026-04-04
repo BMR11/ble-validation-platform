@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import type { PeripheralInfo } from 'react-native-ble-manager';
-import { normUuid, toFullUuid16 } from './uuid';
+import { normUuid, toFullUuid16, uuidShort16 } from './uuid';
 
 /** Standard DIS (0x180A) characteristics — same set as `ProfileDeviceInfo` in peripheral profiles. */
 const DIS_FIELDS: readonly { readonly label: string; readonly short: string }[] = [
@@ -12,15 +12,6 @@ const DIS_FIELDS: readonly { readonly label: string; readonly short: string }[] 
   { label: 'Firmware revision', short: '2A26' },
   { label: 'Software revision', short: '2A28' },
 ];
-
-/** 16-bit UUID portion (e.g. `180a`, `2a29`) from short or 128-bit form. */
-function uuidShort16(uuid: string): string {
-  const n = normUuid(uuid);
-  if (n.length <= 4) {
-    return n.padStart(4, '0');
-  }
-  return n.substring(4, 8);
-}
 
 function findDiscoveredPair(
   info: PeripheralInfo,

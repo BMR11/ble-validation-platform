@@ -46,7 +46,7 @@
                       "to": "active",
                       "trigger": {
                         "type": "onSubscribe",
-                        "characteristicUUID": "2A37"
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
                       },
                       "label": "Central subscribed to HR"
                     },
@@ -67,7 +67,7 @@
                       "to": "idle",
                       "trigger": {
                         "type": "onUnsubscribe",
-                        "characteristicUUID": "2A37"
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
                       },
                       "label": "Central unsubscribed"
                     },
@@ -105,12 +105,12 @@
             },
             "services": [
               {
-                "uuid": "180D",
+                "uuid": "0000180d-0000-1000-8000-00805f9b34fb",
                 "name": "Heart Rate",
                 "primary": true,
                 "characteristics": [
                   {
-                    "uuid": "2A37",
+                    "uuid": "00002a37-0000-1000-8000-00805f9b34fb",
                     "name": "Heart Rate Measurement",
                     "properties": [
                       "notify"
@@ -136,7 +136,7 @@
                     }
                   },
                   {
-                    "uuid": "2A38",
+                    "uuid": "00002a38-0000-1000-8000-00805f9b34fb",
                     "name": "Body Sensor Location",
                     "properties": [
                       "read"
@@ -156,7 +156,7 @@
                     }
                   },
                   {
-                    "uuid": "2A39",
+                    "uuid": "00002a39-0000-1000-8000-00805f9b34fb",
                     "name": "Heart Rate Control Point",
                     "properties": [
                       "write"
@@ -182,12 +182,12 @@
                 ]
               },
               {
-                "uuid": "180F",
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
                 "name": "Battery",
                 "primary": true,
                 "characteristics": [
                   {
-                    "uuid": "2A19",
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
                     "name": "Battery Level",
                     "properties": [
                       "read",
@@ -248,7 +248,7 @@
                       "to": "active",
                       "trigger": {
                         "type": "onSubscribe",
-                        "characteristicUUID": "2A37"
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
                       },
                       "label": "Central subscribed to HR"
                     },
@@ -269,7 +269,7 @@
                       "to": "idle",
                       "trigger": {
                         "type": "onUnsubscribe",
-                        "characteristicUUID": "2A37"
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
                       },
                       "label": "Central unsubscribed"
                     },
@@ -307,12 +307,12 @@
             },
             "services": [
               {
-                "uuid": "180D",
+                "uuid": "0000180d-0000-1000-8000-00805f9b34fb",
                 "name": "Heart Rate",
                 "primary": true,
                 "characteristics": [
                   {
-                    "uuid": "2A37",
+                    "uuid": "00002a37-0000-1000-8000-00805f9b34fb",
                     "name": "Heart Rate Measurement",
                     "properties": [
                       "notify"
@@ -338,7 +338,7 @@
                     }
                   },
                   {
-                    "uuid": "2A38",
+                    "uuid": "00002a38-0000-1000-8000-00805f9b34fb",
                     "name": "Body Sensor Location",
                     "properties": [
                       "read"
@@ -358,7 +358,7 @@
                     }
                   },
                   {
-                    "uuid": "2A39",
+                    "uuid": "00002a39-0000-1000-8000-00805f9b34fb",
                     "name": "Heart Rate Control Point",
                     "properties": [
                       "write"
@@ -384,12 +384,12 @@
                 ]
               },
               {
-                "uuid": "180F",
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
                 "name": "Battery",
                 "primary": true,
                 "characteristics": [
                   {
-                    "uuid": "2A19",
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
                     "name": "Battery Level",
                     "properties": [
                       "read",
@@ -471,7 +471,7 @@
                       "to": "active",
                       "trigger": {
                         "type": "onSubscribe",
-                        "characteristicUUID": "2A37"
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
                       },
                       "label": "Central subscribed to HR"
                     },
@@ -492,7 +492,7 @@
                       "to": "idle",
                       "trigger": {
                         "type": "onUnsubscribe",
-                        "characteristicUUID": "2A37"
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
                       },
                       "label": "Central unsubscribed"
                     },
@@ -530,12 +530,12 @@
             },
             "services": [
               {
-                "uuid": "180D",
+                "uuid": "0000180d-0000-1000-8000-00805f9b34fb",
                 "name": "Heart Rate",
                 "primary": true,
                 "characteristics": [
                   {
-                    "uuid": "2A37",
+                    "uuid": "00002a37-0000-1000-8000-00805f9b34fb",
                     "name": "Heart Rate Measurement",
                     "properties": [
                       "notify"
@@ -561,7 +561,7 @@
                     }
                   },
                   {
-                    "uuid": "2A38",
+                    "uuid": "00002a38-0000-1000-8000-00805f9b34fb",
                     "name": "Body Sensor Location",
                     "properties": [
                       "read"
@@ -581,7 +581,7 @@
                     }
                   },
                   {
-                    "uuid": "2A39",
+                    "uuid": "00002a39-0000-1000-8000-00805f9b34fb",
                     "name": "Heart Rate Control Point",
                     "properties": [
                       "write"
@@ -607,12 +607,12 @@
                 ]
               },
               {
-                "uuid": "180F",
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
                 "name": "Battery",
                 "primary": true,
                 "characteristics": [
                   {
-                    "uuid": "2A19",
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
                     "name": "Battery Level",
                     "properties": [
                       "read",
@@ -985,12 +985,12 @@
                 ]
               },
               {
-                "uuid": "180F",
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
                 "name": "Battery",
                 "primary": true,
                 "characteristics": [
                   {
-                    "uuid": "2A19",
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
                     "name": "Battery Level",
                     "properties": [
                       "read",

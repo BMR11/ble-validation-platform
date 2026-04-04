@@ -12,7 +12,7 @@ This repo provides:
 
 - **JSON profiles** under [`profiles/local/`](profiles/local/) (and optional remote copies) that describe services, characteristics, advertising, optional state machines, and UI hints.
 - A **peripheral** React Native app that loads those profiles (local bundle or HTTP), applies `valueGenerator` expansion, and runs them through `rn-ble-peripheral-module` (logic migrated from the upstream example on branch `test-pripheral-config-profile-mar23`).
-- A **central** React Native app using `react-native-ble-manager` to scan, connect, subscribe, and write — proving end-to-end communication.
+- A **central** React Native app using `react-native-ble-manager` to scan, connect, read **Device Information Service (DIS)** fields, subscribe, and write (Nordic LED) — proving end-to-end communication.
 - **`remote-profile/`** — Vite + Express demo for **server-driven profiles**: version, publish, and pull **latest published** JSON by `profileId` into the peripheral without changing app code.
 
 ## Local vs remote profiles
@@ -29,7 +29,7 @@ Remote mode uses the **same** `applyValueGenerators` + `ProfileEngine` pipeline 
 ## Architecture overview
 
 - **Peripheral** (`peripheral-app/`): local bundles from `../profiles/local/*.json` and/or fetches from remote-profile; executes `ProfileEngine`.
-- **Central** (`central-app/`): user picks a demo target (heart rate vs Nordic LBS), scans by service UUID, connects, discovers services, subscribes, writes LED for Nordic.
+- **Central** (`central-app/`): user picks a demo target (heart rate vs Nordic LBS), scans by service UUID, connects, reads DIS into an expandable **Info** panel, discovers services, subscribes, writes LED for Nordic.
 - **Remote-profile** (`remote-profile/`): React admin UI + Express API + JSON file store — see [remote-profile/README.md](remote-profile/README.md).
 
 More detail: [docs/architecture.md](docs/architecture.md).
@@ -127,8 +127,9 @@ Flow:
 
 1. Choose **target profile** (matches `profiles/local/` IDs).
 2. **Scan (8s)** — filters by the primary service UUID for that profile.
-3. Tap a device row to **connect**.
-4. Observe **live metrics** and **logs** (HR + battery, or Nordic button + LED writes).
+3. Tap a device row to **connect** (scan stops; **target** and **Scan** stay disabled until you disconnect).
+4. Expand **Info** on the device card to see **DIS** strings (manufacturer, model, serial, firmware, etc.) when the peripheral exposes them.
+5. Observe **live metrics** and **logs** (HR + battery, or Nordic button + **LED ON** / **LED OFF** writes).
 
 ## Profiles
 
@@ -156,7 +157,7 @@ Short version:
 
 1. Start **peripheral-app** → select profile → **Start peripheral**.
 2. Start **central-app** → matching target → **Scan** → **Connect**.
-3. Confirm **notifications** (and **LED writes** for Nordic) in UI and logs.
+3. Confirm **notifications**, optional **Info (DIS)**, and **LED ON** then **LED OFF** (Nordic) in UI and logs.
 
 ## Use cases
 

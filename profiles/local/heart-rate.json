@@ -24,7 +24,10 @@
         "transitions": [
           {
             "to": "active",
-            "trigger": { "type": "onSubscribe", "characteristicUUID": "2A37" },
+            "trigger": {
+              "type": "onSubscribe",
+              "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+            },
             "label": "Central subscribed to HR"
           },
           {
@@ -40,7 +43,10 @@
         "transitions": [
           {
             "to": "idle",
-            "trigger": { "type": "onUnsubscribe", "characteristicUUID": "2A37" },
+            "trigger": {
+              "type": "onUnsubscribe",
+              "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+            },
             "label": "Central unsubscribed"
           },
           {
@@ -70,12 +76,12 @@
   },
   "services": [
     {
-      "uuid": "180D",
+      "uuid": "0000180d-0000-1000-8000-00805f9b34fb",
       "name": "Heart Rate",
       "primary": true,
       "characteristics": [
         {
-          "uuid": "2A37",
+          "uuid": "00002a37-0000-1000-8000-00805f9b34fb",
           "name": "Heart Rate Measurement",
           "properties": ["notify"],
           "permissions": ["readable"],
@@ -91,7 +97,7 @@
           }
         },
         {
-          "uuid": "2A38",
+          "uuid": "00002a38-0000-1000-8000-00805f9b34fb",
           "name": "Body Sensor Location",
           "properties": ["read"],
           "permissions": ["readable"],
@@ -104,7 +110,7 @@
           }
         },
         {
-          "uuid": "2A39",
+          "uuid": "00002a39-0000-1000-8000-00805f9b34fb",
           "name": "Heart Rate Control Point",
           "properties": ["write"],
           "permissions": ["writeable"],
@@ -120,12 +126,12 @@
       ]
     },
     {
-      "uuid": "180F",
+      "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
       "name": "Battery",
       "primary": true,
       "characteristics": [
         {
-          "uuid": "2A19",
+          "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
           "name": "Battery Level",
           "properties": ["read", "notify"],
           "permissions": ["readable"],

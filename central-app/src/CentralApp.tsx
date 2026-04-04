@@ -14,7 +14,7 @@ import BleManager, { BleScanMode } from 'react-native-ble-manager';
 import type { Peripheral } from 'react-native-ble-manager';
 import { DEMO_TARGETS, type DemoTargetId } from './centralTargets';
 import { readDeviceInformationService } from './disRead';
-import { normUuid, toShortUuid4 } from './uuid';
+import { normUuid, uuidShort16 } from './uuid';
 
 /** Unicode U+1F4A1 — same bulb as peripheral-app ProfileApp. */
 const BULB_EMOJI = '\u{1F4A1}';
@@ -32,7 +32,18 @@ interface LogRow {
 
 let logSeq = 0;
 
-function parseHeartRateBytes(bytes: number[]): string {
+function valueToBytes(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value as number[];
+  }
+  if (value && typeof value === 'object' && 'length' in value) {
+    return Array.from(value as ArrayLike<number>);
+  }
+  return [];
+}
+
+function parseHeartRateBytes(raw: unknown): string {
+  const bytes = valueToBytes(raw);
   if (bytes.length < 2) {
     return `raw [${bytes.join(', ')}]`;
   }
@@ -83,6 +94,12 @@ async function requestAndroidBle(): Promise<boolean> {
  *        For Nordic LBS we often scan without that filter because 128‑bit service scan filters miss
  *        some peripherals; then we require a name hint or advertised LBS UUID so we do not list
  *        every anonymous BLE device.
+ *
+ * Rejects peripherals that clearly belong to another demo target (name or advertised service UUID),
+ * so e.g. selecting Heart Rate does not list the Nordic LBS demo (`My_LBS`).
+ *
+ * For Nordic LBS, `osServiceFilter` is ignored for nameless peripherals (broad scan); only a
+ * matching advertised service UUID or this target's name hints qualify.
  */
 function matchesTarget(
   p: Peripheral,
@@ -92,20 +109,60 @@ function matchesTarget(
   const t = DEMO_TARGETS[targetId];
   const uuids = p.advertising?.serviceUUIDs;
   const targetUuid = normUuid(t.scanServiceUuid);
+  const targetShort = uuidShort16(t.scanServiceUuid);
+
+  let matchedThisTargetService = false;
   if (Array.isArray(uuids)) {
     for (const u of uuids) {
-      if (normUuid(String(u)) === targetUuid) {
-        return true;
+      const s = String(u);
+      if (normUuid(s) === targetUuid || uuidShort16(s) === targetShort) {
+        matchedThisTargetService = true;
+        break;
+      }
+    }
+    if (!matchedThisTargetService) {
+      for (const otherId of Object.keys(DEMO_TARGETS) as DemoTargetId[]) {
+        if (otherId === targetId) {
+          continue;
+        }
+        const other = DEMO_TARGETS[otherId];
+        const ou = normUuid(other.scanServiceUuid);
+        const os = uuidShort16(other.scanServiceUuid);
+        for (const u of uuids) {
+          const s = String(u);
+          if (normUuid(s) === ou || uuidShort16(s) === os) {
+            return false;
+          }
+        }
       }
     }
   }
+
+  if (matchedThisTargetService) {
+    return true;
+  }
+
   const name = (p.name || p.advertising?.localName || '')
     .trim()
     .toLowerCase();
   if (name) {
-    return t.nameHints.some((h) => name.includes(h));
+    for (const otherId of Object.keys(DEMO_TARGETS) as DemoTargetId[]) {
+      if (otherId === targetId) {
+        continue;
+      }
+      const other = DEMO_TARGETS[otherId];
+      if (
+        other.nameHints.some((h) => h.length > 0 && name.includes(h))
+      ) {
+        return false;
+      }
+    }
+    return t.nameHints.some((h) => h.length > 0 && name.includes(h));
   }
-  return osServiceFilter;
+  // Nordic LBS uses a broad scan (no OS service filter). Never treat "anonymous"
+  // peripherals as pre-filtered — stale ref from a previous HR scan or the initial
+  // ref=true would otherwise list unrelated devices (e.g. RN_BLE_HR_Demo).
+  return osServiceFilter && targetId !== 'nordic-lbs';
 }
 
 export default function CentralApp() {
@@ -129,7 +186,7 @@ export default function CentralApp() {
   const [deviceInfoLoading, setDeviceInfoLoading] = useState(false);
   const deviceMapRef = useRef<Map<string, Peripheral>>(new Map());
   /** Matches `matchesTarget` third arg — set in handleScan before BleManager.scan. */
-  const osServiceScanFilterRef = useRef(true);
+  const osServiceScanFilterRef = useRef(false);
   /** `scan()`'s Promise resolves when the scan *starts* (iOS/Android), not when it ends. */
   const scanFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanGenerationRef = useRef(0);
@@ -173,6 +230,10 @@ export default function CentralApp() {
   useEffect(() => {
     const sub = BleManager.onDiscoverPeripheral((p) => {
       if (!matchesTarget(p, targetId, osServiceScanFilterRef.current)) {
+        if (deviceMapRef.current.has(p.id)) {
+          deviceMapRef.current.delete(p.id);
+          setDevices(Array.from(deviceMapRef.current.values()));
+        }
         return;
       }
       addLog('data', `Discovered: ${JSON.stringify(p)}`);
@@ -184,35 +245,28 @@ export default function CentralApp() {
 
   useEffect(() => {
     const sub = BleManager.onDidUpdateValueForCharacteristic((e) => {
-      const ch = normUuid(e.characteristic);
+      const chShort = uuidShort16(e.characteristic);
       const hr = DEMO_TARGETS['heart-rate-monitor'].services.heartRate;
       const bat = DEMO_TARGETS['heart-rate-monitor'].services.battery;
       const lbs = DEMO_TARGETS['nordic-lbs'].services.lbs;
 
-      if (hr && normUuid(hr.measurement) === ch) {
+      if (hr && uuidShort16(hr.measurement) === chShort) {
         const line = parseHeartRateBytes(e.value);
         setHrLine(line);
         addLog('data', `Notify HR: ${line}`);
         return;
       }
-      if (bat && normUuid(bat.level) === ch) {
-        const v = e.value[0] ?? 0;
+      if (bat && uuidShort16(bat.level) === chShort) {
+        const v = valueToBytes(e.value)[0] ?? 0;
         setBatteryLine(`${v}%`);
         addLog('data', `Notify battery: ${v}%`);
         return;
       }
-      if (lbs && normUuid(lbs.button) === ch) {
-        const v = e.value[0] ?? 0;
+      if (lbs && uuidShort16(lbs.button) === chShort) {
+        const v = valueToBytes(e.value)[0] ?? 0;
         const line = formatLbsButtonState(v);
         setButtonLine(line);
         addLog('data', `Notify button: ${line}`);
-      }
-      //for lbs battery
-      if (bat && toShortUuid4(bat.level) == ch) {
-        const v = e.value[0] ?? 0;
-        setBatteryLine(`${v}%`);
-        addLog('data', `Notify battery: ${v}%`);
-        return;
       }
     });
     return () => sub.remove();
@@ -222,6 +276,9 @@ export default function CentralApp() {
     const sub = BleManager.onDisconnectPeripheral(() => {
       setConnected(null);
       setLedLit(false);
+      setHrLine('--');
+      setBatteryLine('--');
+      setButtonLine('--');
       setDeviceInfoExpanded(false);
       setDeviceInfoRows(null);
       addLog('event', 'Disconnected');
@@ -325,11 +382,20 @@ export default function CentralApp() {
       const bat = DEMO_TARGETS['heart-rate-monitor'].services.battery!;
       await BleManager.retrieveServices(peripheralId);
       addLog('info', 'Services discovered');
-      await BleManager.startNotification(
-        peripheralId,
-        hr.service,
-        hr.measurement
-      );
+      try {
+        await BleManager.startNotification(
+          peripheralId,
+          hr.service,
+          hr.measurement
+        );
+      } catch (e) {
+        if (Platform.OS === 'ios') {
+          addLog('info', 'HR notify: retry with short UUIDs (180D / 2A37)');
+          await BleManager.startNotification(peripheralId, '180D', '2A37');
+        } else {
+          throw e;
+        }
+      }
       await BleManager.startNotification(
         peripheralId,
         bat.service,
@@ -420,6 +486,9 @@ export default function CentralApp() {
       try {
         await BleManager.connect(p.id);
         setConnected(p);
+        setHrLine('--');
+        setBatteryLine('--');
+        setButtonLine('--');
         addLog('event', `Connected: ${p.name || p.id}`);
         if (targetId === 'heart-rate-monitor') {
           await setupHeart(p.id);
@@ -446,6 +515,9 @@ export default function CentralApp() {
       addLog('error', `Disconnect: ${e}`);
     } finally {
       setConnected(null);
+      setHrLine('--');
+      setBatteryLine('--');
+      setButtonLine('--');
       setDeviceInfoExpanded(false);
       setDeviceInfoRows(null);
       setBusy(false);

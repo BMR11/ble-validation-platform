@@ -110,7 +110,7 @@ export const appStyles = StyleSheet.create({
     backgroundColor: '#6b9b7a',
   },
   statusDotPoweredOn: {
-    backgroundColor: '#a89a6e',
+    backgroundColor: '#34d399',
   },
   statusDotError: {
     backgroundColor: '#a67a72',
