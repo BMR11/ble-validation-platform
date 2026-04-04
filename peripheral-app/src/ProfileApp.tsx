@@ -15,7 +15,6 @@ import {
   ScrollView,
   Platform,
   PermissionsAndroid,
-  Switch,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
@@ -45,7 +44,9 @@ import { appStyles } from './styles/appStyles';
 import { DebugLogPanel } from './components/DebugLogPanel';
 import { LBS_LED_CHAR_UUID } from './constants/bleUuids';
 
-/** Unicode U+1F4A1 (electric light bulb) — dims via opacity when LED off, glow when on */
+/** Unicode U+1F50B — battery icon before Battery label (matches central app). */
+const BATTERY_EMOJI = '\u{1F50B}';
+/** Unicode U+1F4A1 — bulb after LED OFF/ON pills (dims when LED off). */
 const BULB_EMOJI = '\u{1F4A1}';
 
 /** Default local profile for first paint and when returning from Remote source. */
@@ -54,6 +55,15 @@ const DEFAULT_LOCAL_PROFILE =
 
 function normUuid(u: string): string {
   return u.replace(/-/g, '').toLowerCase();
+}
+
+/** 16-bit characteristic/service id (e.g. `2a19`) — works for short or 128-bit UUIDs. */
+function uuidShort16(u: string): string {
+  const n = normUuid(u);
+  if (n.length <= 4) {
+    return n.padStart(4, '0');
+  }
+  return n.substring(4, 8);
 }
 
 function isLedCharacteristic(char: ProfileCharacteristic): boolean {
@@ -457,7 +467,75 @@ export default function ProfileApp() {
     const min = ui.min ?? 0;
     const max = ui.max ?? 100;
     const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-    const isBatteryLevelChar = normUuid(charUUID) === '2a19';
+    const isBatteryLevelChar = uuidShort16(charUUID) === '2a19';
+
+    if (isBatteryLevelChar) {
+      const unit = ui.unit || '%';
+      return (
+        <View style={styles.batterySection}>
+          <View style={styles.batteryMetricRow}>
+            <Text style={styles.batteryMetricIcon}>{BATTERY_EMOJI}</Text>
+            <Text
+              style={styles.batteryMetricText}
+              accessible={false}
+              testID={`${charTestBase}-battery-line`}
+            >
+              Battery: {value}
+              {unit}
+            </Text>
+          </View>
+          <View style={styles.batteryControlsRow}>
+            <TouchableOpacity
+              style={styles.batteryMiniBtn}
+              onPress={() => handleValueChange(serviceUUID, charUUID, min)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.batteryMiniBtnText}>{min}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.batteryMiniBtn}
+              onPress={() =>
+                handleValueChange(
+                  serviceUUID,
+                  charUUID,
+                  Math.max(min, value - step)
+                )
+              }
+              activeOpacity={0.7}
+            >
+              <Text style={styles.batteryMiniBtnText}>-{step}</Text>
+            </TouchableOpacity>
+            <View style={styles.batteryBarWrap}>
+              <View style={styles.batteryBarTrack}>
+                <View style={[styles.batteryBarFill, { width: `${pct}%` }]} />
+              </View>
+            </View>
+            <TouchableOpacity
+              accessible
+              accessibilityLabel="Peripheral battery plus ten"
+              testID={`${charTestBase}-slider-plus-step`}
+              style={styles.batteryMiniBtn}
+              onPress={() =>
+                handleValueChange(serviceUUID, charUUID, Math.min(max, value + step))
+              }
+              activeOpacity={0.7}
+            >
+              <Text style={styles.batteryMiniBtnText} accessible={false}>
+                +{step}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID={`${charTestBase}-slider-max`}
+              style={styles.batteryMiniBtn}
+              onPress={() => handleValueChange(serviceUUID, charUUID, max)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.batteryMiniBtnText}>{max}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
 
     return (
       <View>
@@ -494,10 +572,6 @@ export default function ProfileApp() {
             </Text>
           </View>
           <TouchableOpacity
-            accessible={isBatteryLevelChar}
-            accessibilityLabel={
-              isBatteryLevelChar ? 'Peripheral battery plus ten' : undefined
-            }
             testID={`${charTestBase}-slider-plus-step`}
             style={styles.sliderButton}
             onPress={() =>
@@ -505,12 +579,7 @@ export default function ProfileApp() {
             }
             activeOpacity={0.7}
           >
-            <Text
-              style={styles.sliderButtonText}
-              accessible={isBatteryLevelChar ? false : undefined}
-            >
-              +{step}
-            </Text>
+            <Text style={styles.sliderButtonText}>+{step}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             testID={`${charTestBase}-slider-max`}
@@ -535,26 +604,45 @@ export default function ProfileApp() {
     charTestBase: string
   ) => {
     const isOn = value !== 0;
+    const setVal = (on: boolean) =>
+      handleValueChange(serviceUUID, charUUID, on ? 1 : 0);
     return (
-      <View>
-        <Text style={styles.controlLabel} accessible={false}>
-          {ui.label}
-        </Text>
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel} accessible={false}>
-            {isOn ? 'ON' : 'OFF'}
+      <View
+        testID={`${charTestBase}-switch`}
+        accessibilityLabel="Peripheral LBS button switch"
+      >
+        <View style={styles.statePillRow}>
+          <Text style={styles.statePillLabel} accessible={false}>
+            {ui.label} state:
           </Text>
-          <Switch
-            accessible
-            testID={`${charTestBase}-switch`}
-            accessibilityLabel="Peripheral LBS button switch"
-            value={isOn}
-            onValueChange={(newVal) =>
-              handleValueChange(serviceUUID, charUUID, newVal ? 1 : 0)
-            }
-            trackColor={{ false: '#352848', true: '#3d2d52' }}
-            thumbColor={isOn ? '#a78bfa' : '#6b5a7a'}
-          />
+          <View style={styles.statePillGroup}>
+            <TouchableOpacity
+              accessibilityLabel="Peripheral button ON"
+              accessibilityRole="button"
+              accessibilityState={{ selected: isOn }}
+              style={[
+                styles.statePillBtn,
+                isOn && styles.statePillBtnSelected,
+              ]}
+              onPress={() => setVal(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.statePillOnText}>ON</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityLabel="Peripheral button OFF"
+              accessibilityRole="button"
+              accessibilityState={{ selected: !isOn }}
+              style={[
+                styles.statePillBtn,
+                !isOn && styles.statePillBtnSelected,
+              ]}
+              onPress={() => setVal(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.statePillOffText}>OFF</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -569,33 +657,21 @@ export default function ProfileApp() {
     if (isLedCharacteristic(char)) {
       const lit = ledLitFromDisplay(displayValue, value);
       return (
-        <View>
-          <Text style={styles.controlLabel}>{ui.label}</Text>
-          <View style={styles.ledRow}>
+        <View
+          accessibilityLabel={lit ? 'Peripheral LED on' : 'Peripheral LED off'}
+        >
+          <View style={styles.ledControlRow}>
+            <Text style={styles.ledSectionLabel}>{ui.label}:</Text>
             <Text
-              style={[
-                styles.ledEmoji,
-                lit ? styles.ledEmojiOn : styles.ledEmojiOff,
-              ]}
-              accessibilityLabel={lit ? 'LED on' : 'LED dim'}
+              style={[styles.ledBulbEmoji, lit ? styles.ledBulbOn : styles.ledBulbOff]}
+              accessibilityLabel={lit ? 'LED on' : 'LED off'}
             >
               {BULB_EMOJI}
             </Text>
-            <Text
-              style={[styles.ledVerbal, lit ? styles.ledVerbalOn : styles.ledVerbalOff]}
-            >
-              {lit ? 'LED: ON' : 'LED: OFF'}
+            <Text style={styles.ledStateText} accessible={false}>
+              {lit ? 'ON' : 'OFF'}
             </Text>
           </View>
-          {/* <Text
-            testID="peripheral-lbs-led-state-text"
-            accessibilityLabel={
-              lit ? 'Peripheral LED automation ON' : 'Peripheral LED automation OFF'
-            }
-            style={styles.ledAutomationText}
-          >
-            {`LED: ${lit ? 'ON' : 'OFF'}`}
-          </Text> */}
         </View>
       );
     }
@@ -1223,55 +1299,146 @@ const styles = StyleSheet.create({
     color: '#c4b8d4',
     marginTop: 4,
   },
-  toggleRow: {
+  statePillRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
   },
-  toggleLabel: {
-    color: '#d1d5db',
-    fontSize: 14,
+  statePillLabel: {
+    color: '#9ab6d4',
+    fontSize: 16,
     fontWeight: '500',
+  },
+  statePillGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 8,
+  },
+  statePillBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2d323c',
+    backgroundColor: '#141a22',
+    minWidth: 56,
+    alignItems: 'center',
+  },
+  statePillBtnSelected: {
+    borderColor: '#4a7ab0',
+    backgroundColor: '#1a2836',
+    borderWidth: 2,
+  },
+  statePillOffText: {
+    color: '#f87171',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  statePillOnText: {
+    color: '#86efac',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  batterySection: {
+    marginBottom: 4,
+  },
+  batteryMetricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  batteryMetricIcon: {
+    fontSize: 18,
+  },
+  /** Icon + “Battery:” + value — same pattern as central app. */
+  batteryMetricText: {
+    color: '#9ab6d4',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  batteryControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  batteryMiniBtn: {
+    minWidth: 32,
+    height: 28,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+    backgroundColor: '#1e1528',
+    borderWidth: 1,
+    borderColor: '#453d5c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  batteryMiniBtnText: {
+    color: '#d1d5db',
+    fontSize: 11,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  batteryBarWrap: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
+  batteryBarTrack: {
+    width: '100%',
+    height: 12,
+    backgroundColor: '#1e1528',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#352848',
+    overflow: 'hidden',
+  },
+  batteryBarFill: {
+    height: '100%',
+    backgroundColor: '#6b5a8a',
+    borderRadius: 3,
+  },
+  ledControlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginTop: 0,
+  },
+  ledSectionLabel: {
+    color: '#9ab6d4',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  ledBulbEmoji: {
+    fontSize: 26,
+    lineHeight: 30,
+    marginLeft: 8,
+  },
+  /** ON / OFF after the bulb icon. */
+  ledStateText: {
+    color: '#e4e7ec',
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 8,
+    letterSpacing: 0.3,
+  },
+  ledBulbOff: {
+    opacity: 0.35,
+  },
+  ledBulbOn: {
+    opacity: 1,
+    textShadowColor: '#e8c040',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   readonlyValue: {
     color: '#9ca3af',
     fontSize: 16,
     fontWeight: '500',
     fontVariant: ['tabular-nums'],
-  },
-  ledRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 4,
-  },
-  ledEmoji: {
-    fontSize: 44,
-    lineHeight: 50,
-  },
-  ledEmojiOff: {
-    opacity: 0.2,
-  },
-  ledEmojiOn: {
-    opacity: 1,
-    textShadowColor: '#e8c040',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-  },
-  ledVerbal: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  ledVerbalOff: {
-    color: '#6b7280',
-  },
-  ledVerbalOn: {
-    color: '#e8d089',
-  },
-  ledAutomationText: {
-    marginTop: 6,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#c4b5fd',
   },
 });
