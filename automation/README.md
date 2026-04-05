@@ -211,6 +211,12 @@ If any replay fails, the script exits with a non-zero status at the failing comm
 
 ## Part 4b — V2 cross-e2e (Android `adb` broadcasts + iOS replay)
 
+
+
+https://github.com/user-attachments/assets/2bc2249c-c91a-4e0e-b185-dc0945db414b
+
+
+
 This is an **alternate** full run to **`npm run e2e:lbs-battery`**. It drives the **peripheral** with **`adb shell am broadcast`** (custom `AUTOMATION_*` commands handled in **`peripheral-app`** `ProfileApp.tsx`) instead of agent-device **tap** replays on Android. The **central** still uses **agent-device** replay (`.ad` UI automation) for Nordic target → Scan → Connect → LED ON/OFF.
 
 **Prerequisites** are the same as Parts **1–3** (physical Android + iPhone, both apps installed, `cd automation && npm install`, **`automation/.env`** with **`IOS_DEVICE`** and app names — see Part 2).
