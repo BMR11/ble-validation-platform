@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Text,
   View,
+  Image,
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
@@ -699,7 +700,17 @@ export default function ProfileApp() {
         {/* Header */}
         <View style={appStyles.header}>
           <View style={styles.headerRow}>
-            <Text style={appStyles.title}>BLE Peripheral Emulator</Text>
+            <View style={styles.headerTitleRow}>
+              <Image
+                source={require('./assets/app-icon.png')}
+                style={styles.headerIcon}
+                accessibilityLabel="App icon"
+                accessibilityRole="image"
+              />
+              <Text style={[appStyles.title, styles.headerTitleText]}>
+                BLE Peripheral Emulator
+              </Text>
+            </View>
           </View>
           <View style={appStyles.statusRow}>
             <Text style={appStyles.statusLabel}>
@@ -1034,6 +1045,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  },
+  headerIcon: {
+    width: 28,
+    height: 28,
+    marginRight: 10,
+    resizeMode: 'contain',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  headerTitleText: {
+    flexShrink: 1,
   },
   sourceRow: {
     flexDirection: 'row',

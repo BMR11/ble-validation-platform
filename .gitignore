@@ -15,6 +15,7 @@ ios/Pods/
 **/Pods/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+**/xcuserdata/
 
 # Metro / bundler
 .expo/

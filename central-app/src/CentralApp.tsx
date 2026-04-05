@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -580,7 +581,15 @@ export default function CentralApp() {
     <SafeAreaView style={styles.safe}>
       <View style={[styles.main, showLogs && styles.mainWithLogs]}>
         <View style={styles.header}>
-          <Text style={styles.title}>BLE Central App</Text>
+          <View style={styles.headerTitleRow}>
+            <Image
+              source={require('./assets/app-icon.png')}
+              style={styles.headerIcon}
+              accessibilityLabel="App icon"
+              accessibilityRole="image"
+            />
+            <Text style={styles.title}>BLE Central App</Text>
+          </View>
           {/* <Text style={styles.sub}>
             Matches peripheral profiles in ../profiles (scan by service UUID).
           </Text> */}
@@ -953,6 +962,18 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#1e3a8a',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 28,
+    height: 28,
+    marginRight: 10,
+    resizeMode: 'contain',
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   scrollArea: {
     flex: 1,
