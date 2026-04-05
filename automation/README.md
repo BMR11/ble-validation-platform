@@ -48,8 +48,8 @@ Do this once per device (or when native code changes).
 
 **Important:** This flow needs a **real Bluetooth link** between peripheral and central in almost all cases. Use a **physical Android phone** as peripheral and a **physical iPhone** as central unless you know your emulator/simulator supports BLE for both roles.
 
-- Android **application id**: **debug** `com.bleperipheraldemo` · **release** (this repo) `com.bleperipheraldemo.release` — set `ANDROID_PERIPHERAL_PACKAGE` when using release (see Part 1.4).
-- iOS bundle ID for `open` in replays: `org.reactjs.native.example.BleCentralDemo` (same for Debug and typical Release).
+- Android **application id**: **debug** `com.bleperipheraldemo` · **release** (this repo) `com.bleperipheraldemo.release` — set `ANDROID_PERIPHERAL_PACKAGE` when using release (see Part 1.4). Launcher title defaults to **`PERIPHERAL_APP_NAME`** in **`automation/.env.example`**; Android replays use `open "<name>"` and the script substitutes the package id when needed.
+- iOS **Springboard name** for `agent-device open`: set **`CENTRAL_APP_NAME`** in **`automation/.env`** / **`.env.example`** (default matches `CFBundleDisplayName`). Bundle ID in replay temp scripts: `org.reactjs.native.example.BleCentralDemo` (same for Debug and typical Release).
 
 ### 1.4 First-time checklist: release builds + when each app runs
 
@@ -123,9 +123,9 @@ cp .env.example .env
 # Edit .env with your iPhone name, Android package id, optional ANDROID_SERIAL
 ```
 
-`scripts/run-lbs-battery-e2e.sh` and `scripts/adb-peripheral-bootstrap.sh` load **`automation/.env`** if it exists. **Variables you already exported in the shell are not overwritten** by `.env` (so one-off overrides still work).
+Orchestrator scripts source **`load-automation-env.sh`**, which loads **`automation/.env`** (optional, gitignored) first, then **`automation/.env.example`** for any key still unset. **Exports already present in the shell are not overwritten** (CI / one-off overrides still win).
 
-The repo root `.gitignore` ignores **`.env`**; **`automation/.env.example`** is the template to commit.
+Edit **`automation/.env`** for machine-specific values (e.g. `IOS_DEVICE`), or change **`automation/.env.example`** if you want new repo-wide defaults. The repo root `.gitignore` ignores **`.env`**; **`.env.example`** is committed.
 
 ---
 
@@ -168,6 +168,8 @@ The repo root `.gitignore` ignores **`.env`**; **`automation/.env.example`** is 
 
 ## Part 4 — Full automated run (recommended)
 
+The default flow is **`e2e:lbs-battery`** (tap replays on **both** platforms). For an alternate run that drives the **peripheral** with **`adb` broadcasts** instead of Android taps, see **Part 4b**.
+
 ### 4.1 Command
 
 From the **`automation`** directory:
@@ -207,6 +209,75 @@ If any replay fails, the script exits with a non-zero status at the failing comm
 
 ---
 
+## Part 4b — V2 cross-e2e (Android `adb` broadcasts + iOS replay)
+
+This is an **alternate** full run to **`npm run e2e:lbs-battery`**. It drives the **peripheral** with **`adb shell am broadcast`** (custom `AUTOMATION_*` commands handled in **`peripheral-app`** `ProfileApp.tsx`) instead of agent-device **tap** replays on Android. The **central** still uses **agent-device** replay (`.ad` UI automation) for Nordic target → Scan → Connect → LED ON/OFF.
+
+**Prerequisites** are the same as Parts **1–3** (physical Android + iPhone, both apps installed, `cd automation && npm install`, **`automation/.env`** with **`IOS_DEVICE`** and app names — see Part 2).
+
+### 4b.1 Command
+
+From the **repository root** (not only `automation/`):
+
+```bash
+bash automation/scripts/v2/run-nordic-cross-e2e-broadcast-v2.sh
+```
+
+**Debug / diagnostics:** pass **`-d`** or **`--debug`** to print agent-device and adb details (for example **`SESSION_NOT_FOUND`** when closing a session that was never opened — harmless, hidden by default). Example:
+
+```bash
+bash automation/scripts/v2/run-nordic-cross-e2e-broadcast-v2.sh -d
+```
+
+Step lines stay plain (what happens on the **peripheral** vs **iPhone**). Full **agent-device** / **adb** output, and benign **`close`** messages like **SESSION_NOT_FOUND**, appear only when **`V2_VERBOSE=1`**, **`V2_DEBUG=1`**, or **`-d`** / **`--debug`** (the CLI flag turns **`V2_DEBUG`** and **`V2_VERBOSE`** on after **`.env`** is loaded).
+
+### 4b.2 What happens (order)
+
+| Phase | Android peripheral | iOS central |
+|--------|-------------------|-------------|
+| **Cleanup** | `adb` **force-stop** package | **`close <bundle>`** (stop **Central App**) + **close** sessions (best-effort) |
+| **Bootstrap** | **`scripts/adb-peripheral-bootstrap.sh`**: `wait-for-device`, **pm grant** BT perms, **monkey** launch app | — |
+| **Post-launch wait** | Sleep **`V2_POST_BOOTSTRAP_MS`** (default **2000** ms) so RN can **`registerBroadcastReceiver`** before intents arrive | — |
+| **Broadcasts 1–3** | **`am broadcast`**: `AUTOMATION_SELECT_LOCAL` → `AUTOMATION_SELECT_PROFILE` (`profileId=nordic-lbs`) → `AUTOMATION_START_PERIPHERAL` (`profileId=nordic-lbs`). Gap between commands: **`V2_BROADCAST_GAP_MS`** (default **450** ms). | — |
+| **Central UI** | — | **`agent-device open`** `CENTRAL_APP_NAME`, then **four** replay segments **`v2-ios-01` … `v2-ios-04`**: Nordic + Scan + wait → Connect + wait → LED ON → LED OFF (one 🔵 line per segment). Monolithic **`v2-nordic-connect-led.ad`** kept for manual full replay. |
+| **Broadcasts 4–5** | `AUTOMATION_BUTTON_ON` → `AUTOMATION_BUTTON_OFF` | — |
+| **Teardown** | **force-stop** + session close | **`close <bundle>`** (stop central app) + session **close** |
+
+iOS is **not** opened before Android: the first `open` for central runs when the iOS replay phase starts (after the peripheral is advertising via broadcasts).
+
+### 4b.3 One-off broadcast (debug)
+
+From the repo root:
+
+```bash
+bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_SELECT_LOCAL
+bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_START_PERIPHERAL -- --es profileId nordic-lbs
+```
+
+The peripheral app should be **foreground**; check in-app logs / **logcat** for **`[automation]`** lines when a command is handled.
+
+### 4b.4 Env vars (V2)
+
+Set in **`automation/.env`** (see **`.env.example`**). Same base vars as Part 5 (**`IOS_DEVICE`**, **`ANDROID_PERIPHERAL_PACKAGE`**, **`CENTRAL_APP_NAME`**, etc.) plus:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `V2_POST_BOOTSTRAP_MS` | `2000` | Wait after **monkey** launch before the first **`AUTOMATION_*`** broadcast so JS mounts and the broadcast receiver is registered. **Increase** if `AUTOMATION_START_PERIPHERAL` appears to do nothing. |
+| `V2_BROADCAST_GAP_MS` | `450` | Pause between consecutive broadcast shell commands. |
+| `SKIP_ADB_BOOTSTRAP` | `0` | Set to `1` to skip launch + grants if the peripheral is already running with permissions OK. |
+| `V2_VERBOSE` | `0` | Set to `1` to print **agent-device** / **adb** child output. **`V2_DEBUG=1`** or **`-d`** / **`--debug`** also forces this on. |
+| `V2_DEBUG` | `0` | Set to `1` to show benign **`close`** diagnostics (e.g. **SESSION_NOT_FOUND** when no session was open). Same effect as **`-d`**. CLI **`-d`** always turns this **on** after loading **`.env`**. |
+
+**Console output:** One readable line per step (**🟣** = Android peripheral, **🔵** = iPhone central). Benign **`close`** errors (e.g. **SESSION_NOT_FOUND**) are hidden unless **`V2_DEBUG=1`** or **`-d`**. Use **`-d`** when you need full tool diagnostics.
+
+### 4b.5 Troubleshooting (V2)
+
+- **Broadcasts “do nothing”** despite `Broadcast completed: result=0`: raise **`V2_POST_BOOTSTRAP_MS`** (race before **`registerBroadcastReceiver`**).
+- **iOS connect step fails**: segment **`v2-ios-02-connect-wait.ad`** uses **`Central connect My_LBS`**. If the scan row shows a **UUID** instead of **My_LBS**, edit that file (and **`v2-nordic-connect-led.ad`** if you use the monolithic replay) to match **`Central connect <name>`** from **`CentralApp.tsx`** (Part 7).
+- **Wrong Android device**: set **`ANDROID_SERIAL`** (Part 5).
+
+---
+
 ## Part 5 — Environment variables (optional)
 
 Set these in the shell **before** `npm run e2e:lbs-battery`:
@@ -214,16 +285,20 @@ Set these in the shell **before** `npm run e2e:lbs-battery`:
 | Variable | When to use |
 |----------|-------------|
 | `ANDROID_SERIAL` | Multiple Android devices connected; set to the serial from `adb devices`. |
-| `IOS_DEVICE` | **Preferred** for a physical central iPhone: exact name from `npx agent-device devices --json` (row with `kind: device`), e.g. `iPhone-RG`. The script passes **`--device`** to agent-device (same idea as `open "BleCentralDemo" --platform ios --device "iPhone-RG"`). **Required** unless `IOS_UDID` or `ALLOW_IOS_SIMULATOR_UNTARGETED=1`. |
+| `IOS_DEVICE` | **Preferred** for a physical central iPhone: exact name from `npx agent-device devices --json` (row with `kind: device`), e.g. `iPhone-RG`. The script passes **`--device`** to agent-device (same idea as `open "<CENTRAL_APP_NAME>" --platform ios --device "iPhone-RG"`). **Required** unless `IOS_UDID` or `ALLOW_IOS_SIMULATOR_UNTARGETED=1`. |
 | `IOS_UDID` | Optional alternative: USB/Core Device id from the same JSON. Used only when **`IOS_DEVICE` is unset**; the script passes **`--udid`**. On some Macs `--udid` has routed to a Simulator incorrectly; prefer **`IOS_DEVICE`** first. |
 | `ALLOW_IOS_SIMULATOR_UNTARGETED` | Set to `1` only if you intentionally run without `IOS_DEVICE` / `IOS_UDID` (e.g. you installed the central app on the booted simulator). |
-| **`automation/.env`** | Same keys as above; loaded automatically if the variable is **unset** in the shell. Copy from **`automation/.env.example`**. |
+| **`automation/.env`** | Optional overrides; loaded first. Then **`automation/.env.example`** fills defaults. Shell exports still win. |
+| `CENTRAL_APP_NAME` | iOS home-screen label passed to **`agent-device open`**. Set in **`automation/.env`** (copy from **`.env.example`**). Legacy: **`IOS_CENTRAL_DISPLAY_NAME`** is used **only if** `CENTRAL_APP_NAME` is unset after loading both files (so remove or comment out `CENTRAL_APP_NAME` if you rely on the legacy key). |
+| `PERIPHERAL_APP_NAME` | Android launcher title used in replay `open "…"` (must match the quoted string in **`replays/android/*.ad`**). Same pattern as `CENTRAL_APP_NAME`; legacy **`ANDROID_PERIPHERAL_OPEN_DISPLAY`**. **`run-lbs-battery-e2e.sh`** substitutes **`ANDROID_PERIPHERAL_PACKAGE`** for release builds. |
 | `PERIPH_SESSION` | Change the Android named session (default `ble-demo-peripheral`) if it collides with another run. |
 | `CENT_SESSION` | Base name for the iOS session (default `ble-demo-central`). When `IOS_DEVICE` or `IOS_UDID` is set, the script appends a short hash so each phone gets a **fresh session name** and a stale daemon binding to a Simulator cannot persist. |
 | `SKIP_ADB_BOOTSTRAP=1` | Skip step 0 if you already launched the peripheral and granted permissions. |
 | `ANDROID_PERIPHERAL_PACKAGE` | Default `com.bleperipheraldemo` (debug). Use `com.bleperipheraldemo.release` for the **release** APK from this repo. |
-| `IOS_CENTRAL_DISPLAY_NAME` | Default `BleCentralDemo`. Passed to **`agent-device open`** before each iOS replay (physical-device workaround; see Part 7). |
-| `IOS_CENTRAL_BUNDLE_REPLAY` | Default `org.reactjs.native.example.BleCentralDemo`. The script removes this `open …` line from temp replays because the real open is done via **`IOS_CENTRAL_DISPLAY_NAME`**. |
+| `IOS_CENTRAL_BUNDLE_REPLAY` | Default `org.reactjs.native.example.BleCentralDemo`. The script removes this `open …` line from temp replays because the real open is done via **`CENTRAL_APP_NAME`**. |
+| `V2_POST_BOOTSTRAP_MS` | **V2 script only** (Part 4b). Default `2000`. Wait after adb launch before **`AUTOMATION_*`** broadcasts. |
+| `V2_BROADCAST_GAP_MS` | **V2 script only** (Part 4b). Default `450`. Delay between broadcast commands. |
+| `V2_VERBOSE` | **V2 script only** (Part 4b). Default `0`. Set to `1` to show full **agent-device** / **adb** output. |
 
 **Example:**
 
@@ -284,7 +359,7 @@ Repeat steps in the same order as Part 4.2 if you are debugging a single stage.
 | **Android `scrollintoview 'Several Words'` breaks** | The replay lexer splits on spaces; a quoted phrase like `'Nordic LED …'` becomes multiple args. Android replays here use **`scroll down`** plus **`click`** with `id=` / `label=` instead. |
 | **`replay cannot override session lock policy with --device`** | Fixed in `run-lbs-battery-e2e.sh` via **`--session-lock strip`** on iOS when `IOS_DEVICE` / `IOS_UDID` is set (named session + device target). Update your script if you run `agent-device replay` manually the same way. |
 | **iOS replay still targets Simulator (ignores `--udid`)** | **agent-device** keeps **named sessions** in the daemon. If `ble-demo-central` already exists from an earlier run, **`open` reuses that session’s device** and does not re-apply CLI `--udid`. The e2e script runs **`close`** on the central session first (step **0a**). Manually: `npx agent-device --session ble-demo-central --platform ios --session-lock strip --udid <UDID> close` (or omit `--udid` for close), then replay; or use a fresh **`CENT_SESSION`** name. |
-| **`open` inside `replay` uses Simulator even with `--device`** | Known limitation in recent **agent-device** builds: nested replay steps do not inherit device selection. **`run-lbs-battery-e2e.sh`** works around this by running a top-level `open "${IOS_CENTRAL_DISPLAY_NAME}" --platform ios --device "…"` (same as your manual CLI), then replaying a temp script with the embedded `open <bundleId>` line removed. Override **`IOS_CENTRAL_DISPLAY_NAME`** / **`IOS_CENTRAL_BUNDLE_REPLAY`** in `.env` if your app label or bundle id differs. |
+| **`open` inside `replay` uses Simulator even with `--device`** | Known limitation in recent **agent-device** builds: nested replay steps do not inherit device selection. **`run-lbs-battery-e2e.sh`** works around this by running a top-level `open "<CENTRAL_APP_NAME>" --platform ios --device "…"` (same as your manual CLI), then replaying a temp script with the embedded `open <bundleId>` line removed. Override **`CENTRAL_APP_NAME`** / **`IOS_CENTRAL_BUNDLE_REPLAY`** in **`automation/.env`** if your app label or bundle id differs. |
 | **iOS replays never control the phone / agent seems dead** | Clear daemon state: `rm -f ~/.agent-device/daemon.json ~/.agent-device/daemon.lock`, then retry. Confirm the **Automation Agent** app is on the device (see learning note above); install it via **Xcode** if the automatic install did not work. |
 | **Stale session / wrong device after many runs** | Same as above: `rm -f ~/.agent-device/daemon.json ~/.agent-device/daemon.lock`, or use a fresh **`CENT_SESSION`** / **`IOS_AGENT_SESSION`** name. |
 
@@ -295,7 +370,7 @@ Repeat steps in the same order as Part 4.2 if you are debugging a single stage.
 Used by the `.ad` files under `replays/`:
 
 - **Peripheral:** `peripheral-start`, `peripheral-profile-nordic-lbs`, `peripheral-char-2a19-slider-plus-step`; LBS switch `label="Peripheral LBS button switch"`; **LED:** on-screen `LED: ON` / `LED: OFF` (`testID=peripheral-lbs-led-state-text`); battery `label="Peripheral battery plus ten"`.
-- **Central:** `central-target-nordic-lbs`, `central-scan`, `label="Central device My_LBS"`, `central-metric-button`, `central-metric-battery`.
+- **Central:** `central-target-nordic-lbs`, `central-scan`, `label="Central device My_LBS"` (default **`02-connect-and-baseline.ad`**), or **`label="Central connect My_LBS"`** (V2 segments **`v2-ios-02-…`** / monolithic **`v2-nordic-connect-led.ad`** — must match **`CentralApp`** `Central connect ${deviceName}`), `central-metric-button`, `central-metric-battery`.
 
 ---
 
@@ -315,3 +390,5 @@ Used by the `.ad` files under `replays/`:
 | Android: assert LED OFF | `replays/android/peripheral-assert-led-off.ad` |
 | (optional) Android: battery → 80% | `replays/android/05-battery-to-80.ad` |
 | (optional) iOS: assert 80% | `replays/ios/06-assert-battery-80.ad` |
+| **V2:** iOS (split, used by v2 script) | `replays/ios/v2-ios-01-nordic-scan-wait.ad` … `v2-ios-04-led-off.ad` |
+| **V2:** iOS (single file, manual) | `replays/ios/v2-nordic-connect-led.ad` |

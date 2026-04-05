@@ -23,6 +23,8 @@ export {
   type EventDidReceiveWriteRequests,
 } from './NativeRnBlePeripheralModule';
 
+export type { EventDidReceiveBroadcastIntent } from './NativeRnBlePeripheralModule';
+
 export interface AdvertisingOptions {
   localName?: string;
   serviceUUIDs?: string[];
@@ -97,6 +99,11 @@ export const onDidUnsubscribeFromCharacteristic =
   Native.onDidUnsubscribeFromCharacteristic;
 export const onDidReceiveReadRequest = Native.onDidReceiveReadRequest;
 export const onDidReceiveWriteRequests = Native.onDidReceiveWriteRequests;
+
+/** Android: register intent actions to receive via {@link onDidReceiveBroadcastIntent} (ADB/automation). */
+export const registerBroadcastReceiver = Native.registerBroadcastReceiver;
+export const unregisterBroadcastReceiver = Native.unregisterBroadcastReceiver;
+export const onDidReceiveBroadcastIntent = Native.onDidReceiveBroadcastIntent;
 
 export function base64StringToDecimal(base64: string): number {
   const buf: Buffer = Buffer.from(base64, 'base64');

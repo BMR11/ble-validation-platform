@@ -1,0 +1,7 @@
+# v2 segment: after shell opens central app — Nordic target, Scan, wait for scan results.
+context platform=ios
+wait 1000
+click "id=central-target-nordic-lbs"
+wait 300
+click "id=central-scan"
+wait 5000

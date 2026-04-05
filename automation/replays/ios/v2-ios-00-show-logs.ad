@@ -1,0 +1,4 @@
+# v2 segment: tap the log toggle FAB to show the log panel.
+context platform=ios
+click "id=central-toggle-logs"
+wait 500

@@ -4,6 +4,7 @@
  * implementation still exposes the full TurboModule surface.
  */
 export { ManagerState, ManagerAuthorization, CharacteristicProperties, CharacteristicPermissions, ATTError, ConnectionLatency, type EventDidUpdateState, type EventDidStartAdvertising, type EventDidAddService, type EventDidSubscribeToCharacteristic, type EventDidUnsubscribeFromCharacteristic, type EventDidReceiveReadRequest, type EventDidReceiveWriteRequests, } from './NativeRnBlePeripheralModule';
+export type { EventDidReceiveBroadcastIntent } from './NativeRnBlePeripheralModule';
 export interface AdvertisingOptions {
     localName?: string;
     serviceUUIDs?: string[];
@@ -23,6 +24,10 @@ export declare const onDidSubscribeToCharacteristic: import("react-native/Librar
 export declare const onDidUnsubscribeFromCharacteristic: import("react-native/Libraries/Types/CodegenTypes").EventEmitter<import("./NativeRnBlePeripheralModule").EventDidUnsubscribeFromCharacteristic>;
 export declare const onDidReceiveReadRequest: import("react-native/Libraries/Types/CodegenTypes").EventEmitter<import("./NativeRnBlePeripheralModule").EventDidReceiveReadRequest>;
 export declare const onDidReceiveWriteRequests: import("react-native/Libraries/Types/CodegenTypes").EventEmitter<import("./NativeRnBlePeripheralModule").EventDidReceiveWriteRequests>;
+/** Android: register intent actions to receive via {@link onDidReceiveBroadcastIntent} (ADB/automation). */
+export declare const registerBroadcastReceiver: (actions: string[]) => void;
+export declare const unregisterBroadcastReceiver: () => void;
+export declare const onDidReceiveBroadcastIntent: import("react-native/Libraries/Types/CodegenTypes").EventEmitter<import("./NativeRnBlePeripheralModule").EventDidReceiveBroadcastIntent>;
 export declare function base64StringToDecimal(base64: string): number;
 export declare function getStateDescription(state: number): string;
 //# sourceMappingURL=index.d.ts.map

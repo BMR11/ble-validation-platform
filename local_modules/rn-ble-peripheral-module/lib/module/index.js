@@ -42,6 +42,11 @@ export const onDidSubscribeToCharacteristic = Native.onDidSubscribeToCharacteris
 export const onDidUnsubscribeFromCharacteristic = Native.onDidUnsubscribeFromCharacteristic;
 export const onDidReceiveReadRequest = Native.onDidReceiveReadRequest;
 export const onDidReceiveWriteRequests = Native.onDidReceiveWriteRequests;
+
+/** Android: register intent actions to receive via {@link onDidReceiveBroadcastIntent} (ADB/automation). */
+export const registerBroadcastReceiver = Native.registerBroadcastReceiver;
+export const unregisterBroadcastReceiver = Native.unregisterBroadcastReceiver;
+export const onDidReceiveBroadcastIntent = Native.onDidReceiveBroadcastIntent;
 export function base64StringToDecimal(base64) {
   const buf = Buffer.from(base64, 'base64');
   let value = 0;

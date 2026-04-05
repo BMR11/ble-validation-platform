@@ -1,0 +1,4 @@
+# v2 segment: Connect to peripheral + post-connect wait.
+context platform=ios
+click "label=\"Central connect My_LBS\""
+wait 5000

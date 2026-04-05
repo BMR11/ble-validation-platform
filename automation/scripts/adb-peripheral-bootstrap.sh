@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=load-automation-env.sh
 source "${SCRIPT_DIR}/load-automation-env.sh"
-ble_automation_load_env "${AUTO_DIR}/.env"
+ble_automation_load_automation_env "${AUTO_DIR}"
 
 PKG="${ANDROID_PERIPHERAL_PACKAGE:-com.bleperipheraldemo}"
 

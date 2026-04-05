@@ -24,10 +24,14 @@ import {
   onDidUpdateState,
   getStateDescription,
   type EventDidUpdateState,
+  registerBroadcastReceiver,
+  unregisterBroadcastReceiver,
+  onDidReceiveBroadcastIntent,
+  type EventDidReceiveBroadcastIntent,
 } from 'rn-ble-peripheral-module';
 
 import { ProfileEngine } from './profiles/profileEngine';
-import { BUNDLED_PROFILES } from './profiles/profileRegistry';
+import { BUNDLED_PROFILES, getProfileById } from './profiles/profileRegistry';
 import {
   fetchRemoteProfileCatalog,
   fetchRemoteLatestBleProfile,
@@ -43,7 +47,14 @@ import type {
 import type { LogEntry } from './types/log';
 import { appStyles } from './styles/appStyles';
 import { DebugLogPanel } from './components/DebugLogPanel';
-import { LBS_LED_CHAR_UUID } from './constants/bleUuids';
+import {
+  BATTERY_LEVEL_CHAR_UUID,
+  BATTERY_SERVICE_UUID,
+  EXAMPLE_BROADCAST_ACTION,
+  LBS_BUTTON_CHAR_UUID,
+  LBS_LED_CHAR_UUID,
+  LBS_SERVICE_UUID,
+} from './constants/bleUuids';
 
 /** Unicode U+1F50B — battery icon before Battery label (matches central app). */
 const BATTERY_EMOJI = '\u{1F50B}';
@@ -129,6 +140,15 @@ export default function ProfileApp() {
   );
 
   const engineRef = useRef<ProfileEngine | null>(null);
+  const selectedProfileRef = useRef(selectedProfile);
+  useEffect(() => {
+    selectedProfileRef.current = selectedProfile;
+  }, [selectedProfile]);
+
+  const charValuesRef = useRef(charValues);
+  useEffect(() => {
+    charValuesRef.current = charValues;
+  }, [charValues]);
 
   // ── Logging ────────────────────────────────────────────────────────────
 
@@ -260,55 +280,66 @@ export default function ProfileApp() {
     [addLog]
   );
 
+  const startPeripheralWithProfile = useCallback(
+    async (profile: BleProfile) => {
+      const engine = engineRef.current;
+      if (!engine) {
+        addLog('error', 'Peripheral engine not ready');
+        return;
+      }
+
+      if (Platform.OS === 'android') {
+        const granted = await requestPermissions();
+        if (!granted) {
+          addLog('error', 'BLE permissions denied');
+          return;
+        }
+      }
+
+      try {
+        if (engine.isRunning()) {
+          engine.stopProfile();
+        }
+        engine.loadProfile(profile);
+        await engine.executeProfile();
+        setActiveProfile(profile);
+
+        const initialValues = new Map<string, number | number[] | string>();
+        for (const svc of profile.services) {
+          for (const char of svc.characteristics) {
+            if (char.value?.initial !== undefined) {
+              initialValues.set(
+                char.uuid.toUpperCase(),
+                char.value.initial as number | number[] | string
+              );
+            }
+          }
+        }
+        setCharValues(initialValues);
+
+        if (engine.getCurrentState() && profile.stateMachine) {
+          const stateId = engine.getCurrentState()!;
+          const stateDef = profile.stateMachine.states[stateId];
+          if (stateDef) {
+            setCurrentStateDef({ id: stateId, def: stateDef });
+          }
+          setManualTransitions(engine.getManualTransitions());
+        }
+      } catch (error) {
+        addLog('error', `Failed to start peripheral: ${error}`);
+      }
+    },
+    [addLog, requestPermissions]
+  );
+
   const handleStartPeripheral = useCallback(async () => {
-    const engine = engineRef.current;
     const profile = selectedProfile;
-    if (!engine || !profile) {
+    if (!profile) {
       addLog('error', 'Select a profile first');
       return;
     }
-
-    if (Platform.OS === 'android') {
-      const granted = await requestPermissions();
-      if (!granted) {
-        addLog('error', 'BLE permissions denied');
-        return;
-      }
-    }
-
-    try {
-      if (engine.isRunning()) {
-        engine.stopProfile();
-      }
-      engine.loadProfile(profile);
-      await engine.executeProfile();
-      setActiveProfile(profile);
-
-      const initialValues = new Map<string, number | number[] | string>();
-      for (const svc of profile.services) {
-        for (const char of svc.characteristics) {
-          if (char.value?.initial !== undefined) {
-            initialValues.set(
-              char.uuid.toUpperCase(),
-              char.value.initial as number | number[] | string
-            );
-          }
-        }
-      }
-      setCharValues(initialValues);
-
-      if (engine.getCurrentState() && profile.stateMachine) {
-        const stateId = engine.getCurrentState()!;
-        const stateDef = profile.stateMachine.states[stateId];
-        if (stateDef) {
-          setCurrentStateDef({ id: stateId, def: stateDef });
-        }
-        setManualTransitions(engine.getManualTransitions());
-      }
-    } catch (error) {
-      addLog('error', `Failed to start peripheral: ${error}`);
-    }
-  }, [addLog, requestPermissions, selectedProfile]);
+    await startPeripheralWithProfile(profile);
+  }, [addLog, selectedProfile, startPeripheralWithProfile]);
 
   const handleStopProfile = useCallback(() => {
     engineRef.current?.stopProfile();
@@ -329,6 +360,127 @@ export default function ProfileApp() {
     },
     []
   );
+
+  // ── Android ADB broadcast automation (see automation/scripts/v2/) ───────
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    registerBroadcastReceiver([EXAMPLE_BROADCAST_ACTION]);
+
+    const sub = onDidReceiveBroadcastIntent(
+      (event: EventDidReceiveBroadcastIntent & { extras?: Record<string, unknown> }) => {
+      const extras = event.extras;
+      if (!extras) {
+        return;
+      }
+      const rawCmd = extras.command;
+      if (typeof rawCmd !== 'string') {
+        return;
+      }
+      const cmd = rawCmd.trim();
+
+      if (cmd === 'AUTOMATION_SELECT_LOCAL') {
+        setProfileSource('local');
+        addLog('info', '[automation] profile source: Local');
+        return;
+      }
+
+      if (cmd === 'AUTOMATION_SELECT_PROFILE') {
+        const pid = extras.profileId;
+        if (typeof pid !== 'string' || !pid.trim()) {
+          addLog('error', '[automation] AUTOMATION_SELECT_PROFILE: missing profileId');
+          return;
+        }
+        const p = getProfileById(pid.trim());
+        if (!p) {
+          addLog('error', `[automation] Unknown profileId: ${pid}`);
+          return;
+        }
+        setSelectedProfile(p);
+        addLog('info', `[automation] selected profile: ${p.name}`);
+        return;
+      }
+
+      if (cmd === 'AUTOMATION_START_PERIPHERAL') {
+        const pid = extras.profileId;
+        let profile: BleProfile | undefined;
+        if (typeof pid === 'string' && pid.trim()) {
+          profile = getProfileById(pid.trim());
+          if (!profile) {
+            addLog('error', `[automation] Unknown profileId: ${pid}`);
+            return;
+          }
+        } else {
+          profile = selectedProfileRef.current ?? undefined;
+        }
+        if (!profile) {
+          addLog('error', '[automation] No profile (set AUTOMATION_SELECT_PROFILE or pass profileId)');
+          return;
+        }
+        void startPeripheralWithProfile(profile);
+        addLog('info', '[automation] START_PERIPHERAL');
+        return;
+      }
+
+      if (cmd === 'AUTOMATION_BUTTON_ON') {
+        handleValueChange(LBS_SERVICE_UUID, LBS_BUTTON_CHAR_UUID, 1);
+        addLog('info', '[automation] Button ON');
+        return;
+      }
+
+      if (cmd === 'AUTOMATION_BUTTON_OFF') {
+        handleValueChange(LBS_SERVICE_UUID, LBS_BUTTON_CHAR_UUID, 0);
+        addLog('info', '[automation] Button OFF');
+        return;
+      }
+
+      if (cmd === 'AUTOMATION_SHOW_LOGS') {
+        setShowLogs(true);
+        addLog('info', '[automation] Logs panel shown');
+        return;
+      }
+
+      if (cmd === 'AUTOMATION_BATTERY_PLUS_10' || cmd === 'AUTOMATION_BATTERY_MINUS_10') {
+        const profile = selectedProfileRef.current;
+        if (!profile) {
+          addLog('error', '[automation] No active profile for battery update');
+          return;
+        }
+        let svcUUID: string | undefined;
+        let charUUID: string | undefined;
+        for (const svc of profile.services) {
+          if (uuidShort16(svc.uuid) !== uuidShort16(BATTERY_SERVICE_UUID)) { continue; }
+          for (const ch of svc.characteristics) {
+            if (uuidShort16(ch.uuid) === uuidShort16(BATTERY_LEVEL_CHAR_UUID)) {
+              svcUUID = svc.uuid;
+              charUUID = ch.uuid;
+              break;
+            }
+          }
+          if (charUUID) { break; }
+        }
+        if (!svcUUID || !charUUID) {
+          addLog('error', '[automation] Battery characteristic not found in active profile');
+          return;
+        }
+        const cur = (charValuesRef.current.get(charUUID.toUpperCase()) as number) ?? 50;
+        const delta = cmd === 'AUTOMATION_BATTERY_PLUS_10' ? 10 : -10;
+        const next = Math.max(0, Math.min(100, cur + delta));
+        handleValueChange(svcUUID, charUUID, next);
+        addLog('info', `[automation] Battery ${cur} → ${next}`);
+        return;
+      }
+    }
+    );
+
+    return () => {
+      sub.remove();
+      unregisterBroadcastReceiver();
+    };
+  }, [addLog, handleValueChange, startPeripheralWithProfile]);
 
   // ── Render Helpers ─────────────────────────────────────────────────────
 

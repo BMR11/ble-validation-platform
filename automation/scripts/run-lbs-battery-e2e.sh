@@ -14,7 +14,7 @@ ROOT_DIR="$(cd "${AUTO_DIR}/.." && pwd)"
 # shellcheck source=load-automation-env.sh
 # Optional automation/.env — keys only applied if unset (export in shell still wins).
 source "${SCRIPT_DIR}/load-automation-env.sh"
-ble_automation_load_env "${AUTO_DIR}/.env"
+ble_automation_load_automation_env "${AUTO_DIR}"
 
 PERIPH_SESSION="${PERIPH_SESSION:-ble-demo-peripheral}"
 CENT_SESSION_BASE="${CENT_SESSION:-ble-demo-central}"
@@ -120,16 +120,15 @@ trap 'e2e_teardown_on_exit' EXIT
 
 # agent-device (~0.11): `open` inside `replay` ignores CLI --device/--udid and targets the booted Simulator.
 # Use the same top-level `open` pattern that works on device, then replay a script with that line removed.
-IOS_CENTRAL_DISPLAY_NAME="${IOS_CENTRAL_DISPLAY_NAME:-BleCentralDemo}"
 IOS_CENTRAL_BUNDLE_REPLAY="${IOS_CENTRAL_BUNDLE_REPLAY:-org.reactjs.native.example.BleCentralDemo}"
 # open --relaunch terminates the app first; some devices/agent-device builds fail with "Failed to terminate iOS app".
 E2E_IOS_OPEN_RELAUNCH="${E2E_IOS_OPEN_RELAUNCH:-0}"
 
 run_ios_open_central() {
-  # Exact working shape (no --session): open "BleCentralDemo" --platform ios --device "iPhone-RG"
+  # Exact working shape (no --session): open "${CENTRAL_APP_NAME}" --platform ios --device "…" (names from .env)
   # Requires ad_close_peripheral first so "default" is not blocked by the Android session.
   local cmd=( "${AD_BASE[@]}" )
-  cmd+=(open "${IOS_CENTRAL_DISPLAY_NAME}")
+  cmd+=(open "${CENTRAL_APP_NAME}")
   cmd+=(--platform ios)
   if [[ -n "${IOS_DEVICE}" ]]; then
     cmd+=(--device "${IOS_DEVICE}")
@@ -165,13 +164,15 @@ ios_replay() {
   rm -f "${tmp}"
 }
 
-# Android .ad files use "open com.bleperipheraldemo"; substitute release (or custom) package id.
+# Android .ad files use launcher label open "${PERIPHERAL_APP_NAME}" (see peripheral-app res/values/strings.xml);
+# substitute ANDROID_PERIPHERAL_PACKAGE for release/custom applicationId.
 android_replay() {
   local src="$1"
   local tmp
   # macOS mktemp requires the template to end with XXXXXX (no suffix after it).
   tmp="$(mktemp "${TMPDIR:-/tmp}/ble-demo-android-replay.XXXXXX")"
-  sed "s/^open com\\.bleperipheraldemo$/open ${ANDROID_PERIPHERAL_PACKAGE}/g" "$src" >"$tmp"
+  sed -e "s/^open \"${PERIPHERAL_APP_NAME}\"\$/open ${ANDROID_PERIPHERAL_PACKAGE}/g" \
+      -e "s/^open com\\.bleperipheraldemo\$/open ${ANDROID_PERIPHERAL_PACKAGE}/g" "$src" >"$tmp"
   ad_force_stop_peripheral
   run_ad android --session "${PERIPH_SESSION}" --platform android replay "$tmp"
   rm -f "$tmp"

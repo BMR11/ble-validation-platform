@@ -1,6 +1,6 @@
 # Android: RN often omits testID from resource-id; use accessibility labels (see ProfileApp accessible={false} on children).
 context platform=android
-open com.bleperipheraldemo
+open "Peripheral App"
 wait 2000
 scroll down
 wait 400

@@ -1,6 +1,6 @@
 # Assert peripheral reflects central LED ON write.
 context platform=android
-open com.bleperipheraldemo
+open "Peripheral App"
 wait 2000
 scroll down
 wait 400
