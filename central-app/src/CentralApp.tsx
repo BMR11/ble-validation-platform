@@ -13,6 +13,7 @@ import {
 import BleManager, { BleScanMode } from 'react-native-ble-manager';
 import type { Peripheral } from 'react-native-ble-manager';
 import { DEMO_TARGETS, type DemoTargetId } from './centralTargets';
+import { HeartRateGraph } from './components/HeartRateGraph';
 import { readDeviceInformationService } from './disRead';
 import { normUuid, uuidShort16 } from './uuid';
 
@@ -42,15 +43,27 @@ function valueToBytes(value: unknown): number[] {
   return [];
 }
 
-function parseHeartRateBytes(raw: unknown): string {
+function parseHeartRateBpm(raw: unknown): number | null {
   const bytes = valueToBytes(raw);
   if (bytes.length < 2) {
-    return `raw [${bytes.join(', ')}]`;
+    return null;
   }
   const flags = bytes[0] ?? 0;
   const eightBit = (flags & 0x01) === 0;
   const bpm = eightBit ? bytes[1]! : bytes[1]! | (bytes[2]! << 8);
-  return `${bpm} BPM`;
+  if (bpm < 30 || bpm > 300) {
+    return null;
+  }
+  return bpm;
+}
+
+function parseHeartRateBytes(raw: unknown): string {
+  const bpm = parseHeartRateBpm(raw);
+  if (bpm != null) {
+    return `${bpm} BPM`;
+  }
+  const bytes = valueToBytes(raw);
+  return `raw [${bytes.join(', ')}]`;
 }
 
 /** Nordic LBS button characteristic: 0 = off, 1 = on, 255 = error state in profile. */
@@ -174,7 +187,8 @@ export default function CentralApp() {
   const [devices, setDevices] = useState<Peripheral[]>([]);
   const [connected, setConnected] = useState<Peripheral | null>(null);
   const [busy, setBusy] = useState(false);
-  const [hrLine, setHrLine] = useState<string>('--');
+  /** Numeric BPM for HR graph; null when unknown or disconnected. */
+  const [hrBpm, setHrBpm] = useState<number | null>(null);
   const [batteryLine, setBatteryLine] = useState<string>('--');
   const [buttonLine, setButtonLine] = useState<string>('--');
   /** Last known LED on peripheral (read on connect + updated after writes). */
@@ -252,7 +266,7 @@ export default function CentralApp() {
 
       if (hr && uuidShort16(hr.measurement) === chShort) {
         const line = parseHeartRateBytes(e.value);
-        setHrLine(line);
+        setHrBpm(parseHeartRateBpm(e.value));
         addLog('data', `Notify HR: ${line}`);
         return;
       }
@@ -276,7 +290,7 @@ export default function CentralApp() {
     const sub = BleManager.onDisconnectPeripheral(() => {
       setConnected(null);
       setLedLit(false);
-      setHrLine('--');
+      setHrBpm(null);
       setBatteryLine('--');
       setButtonLine('--');
       setDeviceInfoExpanded(false);
@@ -486,7 +500,7 @@ export default function CentralApp() {
       try {
         await BleManager.connect(p.id);
         setConnected(p);
-        setHrLine('--');
+        setHrBpm(null);
         setBatteryLine('--');
         setButtonLine('--');
         addLog('event', `Connected: ${p.name || p.id}`);
@@ -515,7 +529,7 @@ export default function CentralApp() {
       addLog('error', `Disconnect: ${e}`);
     } finally {
       setConnected(null);
-      setHrLine('--');
+      setHrBpm(null);
       setBatteryLine('--');
       setButtonLine('--');
       setDeviceInfoExpanded(false);
@@ -715,9 +729,11 @@ export default function CentralApp() {
                       )}
                       {targetId === 'heart-rate-monitor' && (
                         <>
-                          <Text testID="central-metric-hr" style={styles.metric}>
-                            HR: {hrLine}
-                          </Text>
+                          <HeartRateGraph
+                            bpm={hrBpm ?? 0}
+                            testID="central-metric-hr"
+                            plotTestID="central-metric-hr-plot"
+                          />
                           <View style={styles.metricRow}>
                             <Text style={styles.metricBatteryIcon}>{BATTERY_EMOJI}</Text>
                             <Text testID="central-metric-battery" style={styles.metric}>
