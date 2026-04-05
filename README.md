@@ -102,6 +102,10 @@ Remote mode uses the **same** `applyValueGenerators` + `ProfileEngine` pipeline 
 
 ## Architecture overview
 
+<img width="2561" height="1471" alt="ble-excalidraw" src="https://github.com/user-attachments/assets/0a2f40d6-ac44-4dff-8358-fde33ff34f16" />
+
+
+
 - **Peripheral** (`peripheral-app/`): local bundles from `../profiles/local/*.json` and/or fetches from remote-profile; executes `ProfileEngine`.
 - **Central** (`central-app/`): user picks a demo target (heart rate vs Nordic LBS), scans by service UUID, connects, reads DIS into an expandable **Info** panel, discovers services, subscribes, writes LED for Nordic.
 - **Remote-profile** (`remote-profile/`): React admin UI + Express API + JSON file store — see [remote-profile/README.md](remote-profile/README.md).
