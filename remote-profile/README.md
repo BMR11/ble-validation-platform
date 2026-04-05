@@ -33,7 +33,7 @@ Use this when the phone and Mac share the **same Wi‑Fi** (no ngrok / loca.lt).
 
 4. On the **phone browser** (optional): `http://<LAN-IP>:5174` — admin login `demo@example.com` / `demo123`. API check: `http://<LAN-IP>:4050/health`.
 
-5. **Peripheral app:** **Profile source → Remote** → **Fetch remote profiles**. Restart Metro after editing **`.env`** (`npm start -- --reset-cache` if needed).
+5. **Peripheral app:** **Profile source → Remote** → **Fetch remote profiles**. Restart Metro after editing **`peripheral-app/.env`** (not `.env.example`); use `yarn start --reset-cache` or `npm start -- --reset-cache` if the API URL is stale.
 
 Do **not** run `localtunnel` / `ngrok` for this flow unless you need cellular access.
 

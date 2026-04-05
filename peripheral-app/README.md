@@ -4,7 +4,7 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 ## Remote profiles (`.env`)
 
-For **Profile source → Remote**, copy **`.env.example`** to **`.env`** and set **`REMOTE_PROFILE_LAN_HOST`** (or **`REMOTE_PROFILE_TUNNEL_BASE`**) for your machine. Never commit **`.env`**. Details: [`docs/remote-profiles.md`](../docs/remote-profiles.md).
+For **Profile source → Remote**, copy **`.env.example`** to **`.env`** and set **`REMOTE_PROFILE_LAN_HOST`** (or **`REMOTE_PROFILE_TUNNEL_BASE`**) for your machine. Never commit **`.env`**. After changing **`.env`**, restart Metro; use **`yarn start --reset-cache`** (or **`npm start -- --reset-cache`**) if the remote API URL still looks wrong. Details: [`docs/remote-profiles.md`](../docs/remote-profiles.md).
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 

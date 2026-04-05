@@ -28,7 +28,7 @@ Remote profiles demonstrate **central management**: you can publish a new versio
 1. `cp .env.example .env` inside [`peripheral-app/`](../peripheral-app/).
 2. Set **`REMOTE_PROFILE_LAN_HOST`** to your dev computer’s **Wi‑Fi IPv4** when testing on a **physical phone** on the same LAN (e.g. Mac: `ipconfig getifaddr en0`). Leave empty for the Android emulator / iOS Simulator.
 3. Optionally set **`REMOTE_PROFILE_TUNNEL_BASE`** to a public `https://…` origin (ngrok, loca.lt, etc.) for cellular / off-LAN.
-4. Restart Metro after changes; use `npm start -- --reset-cache` if values seem stale.
+4. Restart Metro after editing **`.env`** (Metro does not read **`.env.example`**). If the app still shows the old API URL, start the bundler with a cache reset: `yarn start --reset-cache` or `npm start -- --reset-cache`.
 
 [`remoteProfileApiBase.ts`](../peripheral-app/src/config/remoteProfileApiBase.ts) only **reads** those values (via [`react-native-dotenv`](https://github.com/goatandsheep/react-native-dotenv)); it should not contain real IPs.
 

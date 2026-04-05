@@ -63,7 +63,7 @@ Requirements: **Node 18+**, **JDK 17** (for Android), Xcode + CocoaPods for iOS 
    cp .env.example .env
    ```
 
-   Edit **`.env`**: set **`REMOTE_PROFILE_LAN_HOST`** for a physical phone on Wi‑Fi (see [docs/remote-profiles.md](docs/remote-profiles.md)). Never commit **`.env`**.
+   Edit **`.env`**: set **`REMOTE_PROFILE_LAN_HOST`** for a physical phone on Wi‑Fi (see [docs/remote-profiles.md](docs/remote-profiles.md)). Never commit **`.env`**. After changing **`.env`**, restart Metro; use `yarn start --reset-cache` or `npm start -- --reset-cache` if the remote URL still looks wrong.
 
    The app depends on the local library via `file:../local_modules/rn-ble-peripheral-module` (from `peripheral-app/`).
 
