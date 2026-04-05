@@ -235,15 +235,18 @@ Step lines stay plain (what happens on the **peripheral** vs **iPhone**). Full *
 
 | Phase | Android peripheral | iOS central |
 |--------|-------------------|-------------|
-| **Cleanup** | `adb` **force-stop** package | **`close <bundle>`** (stop **Central App**) + **close** sessions (best-effort) |
+| **Cleanup** | `adb` **force-stop** package | **`close <bundle>`** (stop **Central App**) + **close** sessions (best-effort). All close calls run **in parallel**. |
 | **Bootstrap** | **`scripts/adb-peripheral-bootstrap.sh`**: `wait-for-device`, **pm grant** BT perms, **monkey** launch app | — |
-| **Post-launch wait** | Sleep **`V2_POST_BOOTSTRAP_MS`** (default **2000** ms) so RN can **`registerBroadcastReceiver`** before intents arrive | — |
-| **Broadcasts 1–3** | **`am broadcast`**: `AUTOMATION_SELECT_LOCAL` → `AUTOMATION_SELECT_PROFILE` (`profileId=nordic-lbs`) → `AUTOMATION_START_PERIPHERAL` (`profileId=nordic-lbs`). Gap between commands: **`V2_BROADCAST_GAP_MS`** (default **450** ms). | — |
-| **Central UI** | — | **`agent-device open`** `CENTRAL_APP_NAME`, then **four** replay segments **`v2-ios-01` … `v2-ios-04`**: Nordic + Scan + wait → Connect + wait → LED ON → LED OFF (one 🔵 line per segment). Monolithic **`v2-nordic-connect-led.ad`** kept for manual full replay. |
-| **Broadcasts 4–5** | `AUTOMATION_BUTTON_ON` → `AUTOMATION_BUTTON_OFF` | — |
+| **Post-launch wait** | Sleep **`V2_POST_BOOTSTRAP_MS`** (default **1500** ms) so RN can **`registerBroadcastReceiver`** before intents arrive | — |
+| **Broadcasts 1–4** | **`am broadcast`**: `AUTOMATION_SELECT_LOCAL` → `AUTOMATION_SELECT_PROFILE` (`profileId=nordic-lbs`) → `AUTOMATION_START_PERIPHERAL` (`profileId=nordic-lbs`) → `AUTOMATION_SHOW_LOGS`. Gap between commands: **`V2_BROADCAST_GAP_MS`** (default **200** ms). | — |
+| **Central UI** | — | **`agent-device open`** `CENTRAL_APP_NAME`, then **five** replay segments **`v2-ios-00` … `v2-ios-04`**: Show logs → Nordic + Scan + wait → Connect + wait → LED ON → LED OFF (one 🔵 line per segment). Monolithic **`v2-nordic-connect-led.ad`** kept for manual full replay. |
+| **Broadcasts 5–6** | `AUTOMATION_BUTTON_ON` → `AUTOMATION_BUTTON_OFF` | — |
+| **Broadcasts 7–11** | `AUTOMATION_BATTERY_PLUS_10` ×3 → `AUTOMATION_BATTERY_MINUS_10` ×2 (1 s gap between each). Default battery 50 → 60 → 70 → 80 → 70 → 60. | — |
 | **Teardown** | **force-stop** + session close | **`close <bundle>`** (stop central app) + session **close** |
 
 iOS is **not** opened before Android: the first `open` for central runs when the iOS replay phase starts (after the peripheral is advertising via broadcasts).
+
+**Step format:** `Step N => 🟣 Peripheral : <message>` or `Step N => 🔵 Central : <message>`. Cleanup step uses `🧹`. Elapsed time printed after all steps.
 
 ### 4b.3 One-off broadcast (debug)
 
@@ -252,7 +255,12 @@ From the repo root:
 ```bash
 bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_SELECT_LOCAL
 bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_START_PERIPHERAL -- --es profileId nordic-lbs
+bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_SHOW_LOGS
+bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_BATTERY_PLUS_10
+bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_BATTERY_MINUS_10
 ```
+
+Available commands: `AUTOMATION_SELECT_LOCAL`, `AUTOMATION_SELECT_PROFILE` (needs `--es profileId <id>`), `AUTOMATION_START_PERIPHERAL` (needs `--es profileId <id>`), `AUTOMATION_BUTTON_ON`, `AUTOMATION_BUTTON_OFF`, `AUTOMATION_SHOW_LOGS`, `AUTOMATION_BATTERY_PLUS_10`, `AUTOMATION_BATTERY_MINUS_10`.
 
 The peripheral app should be **foreground**; check in-app logs / **logcat** for **`[automation]`** lines when a command is handled.
 
@@ -262,8 +270,8 @@ Set in **`automation/.env`** (see **`.env.example`**). Same base vars as Part 5 
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `V2_POST_BOOTSTRAP_MS` | `2000` | Wait after **monkey** launch before the first **`AUTOMATION_*`** broadcast so JS mounts and the broadcast receiver is registered. **Increase** if `AUTOMATION_START_PERIPHERAL` appears to do nothing. |
-| `V2_BROADCAST_GAP_MS` | `450` | Pause between consecutive broadcast shell commands. |
+| `V2_POST_BOOTSTRAP_MS` | `1500` | Wait after **monkey** launch before the first **`AUTOMATION_*`** broadcast so JS mounts and the broadcast receiver is registered. **Increase** if `AUTOMATION_START_PERIPHERAL` appears to do nothing. |
+| `V2_BROADCAST_GAP_MS` | `200` | Pause between consecutive broadcast shell commands. |
 | `SKIP_ADB_BOOTSTRAP` | `0` | Set to `1` to skip launch + grants if the peripheral is already running with permissions OK. |
 | `V2_VERBOSE` | `0` | Set to `1` to print **agent-device** / **adb** child output. **`V2_DEBUG=1`** or **`-d`** / **`--debug`** also forces this on. |
 | `V2_DEBUG` | `0` | Set to `1` to show benign **`close`** diagnostics (e.g. **SESSION_NOT_FOUND** when no session was open). Same effect as **`-d`**. CLI **`-d`** always turns this **on** after loading **`.env`**. |
@@ -390,5 +398,5 @@ Used by the `.ad` files under `replays/`:
 | Android: assert LED OFF | `replays/android/peripheral-assert-led-off.ad` |
 | (optional) Android: battery → 80% | `replays/android/05-battery-to-80.ad` |
 | (optional) iOS: assert 80% | `replays/ios/06-assert-battery-80.ad` |
-| **V2:** iOS (split, used by v2 script) | `replays/ios/v2-ios-01-nordic-scan-wait.ad` … `v2-ios-04-led-off.ad` |
+| **V2:** iOS (split, used by v2 script) | `replays/ios/v2-ios-00-show-logs.ad` … `v2-ios-04-led-off.ad` |
 | **V2:** iOS (single file, manual) | `replays/ios/v2-nordic-connect-led.ad` |
