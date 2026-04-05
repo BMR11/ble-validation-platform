@@ -28,9 +28,9 @@
               "deviceName": "My_HR"
             },
             "deviceInfo": {
-              "manufacturerName": "Demo Manufacturer",
-              "modelNumber": "RN-BLE-Peripheral-001",
-              "serialNumber": "DEMO-2024-001234",
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-HR",
+              "serialNumber": "SN-1-HR",
               "hardwareRevision": "1.0.0",
               "firmwareRevision": "2.1.0",
               "softwareRevision": "1.0.0"
@@ -230,9 +230,9 @@
               "deviceName": "My_HR"
             },
             "deviceInfo": {
-              "manufacturerName": "Demo Manufacturer",
-              "modelNumber": "RN-BLE-Peripheral-001",
-              "serialNumber": "DEMO-2024-001234",
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-HR",
+              "serialNumber": "SN-1-HR",
               "hardwareRevision": "1.0.0",
               "firmwareRevision": "2.1.0",
               "softwareRevision": "1.0.0"
@@ -453,9 +453,9 @@
               "deviceName": "My_HR"
             },
             "deviceInfo": {
-              "manufacturerName": "Demo Manufacturer",
-              "modelNumber": "RN-BLE-Peripheral-001",
-              "serialNumber": "DEMO-2024-001234",
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-HR",
+              "serialNumber": "SN-1-HR",
               "hardwareRevision": "1.0.0",
               "firmwareRevision": "2.1.0",
               "softwareRevision": "1.0.0"
@@ -684,9 +684,9 @@
               "deviceName": "My_LBS"
             },
             "deviceInfo": {
-              "manufacturerName": "Demo Manufacturer",
-              "modelNumber": "RN-BLE-Peripheral-001",
-              "serialNumber": "DEMO-2024-001234",
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-LBS",
+              "serialNumber": "SN-1-LBS",
               "hardwareRevision": "1.0.0",
               "firmwareRevision": "2.1.0",
               "softwareRevision": "1.0.0"
@@ -843,9 +843,9 @@
               "deviceName": "My_LBS"
             },
             "deviceInfo": {
-              "manufacturerName": "Demo Manufacturer",
-              "modelNumber": "RN-BLE-Peripheral-001",
-              "serialNumber": "DEMO-2024-001234",
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-LBS",
+              "serialNumber": "SN-1-LBS",
               "hardwareRevision": "1.0.0",
               "firmwareRevision": "2.1.0",
               "softwareRevision": "1.0.0"
