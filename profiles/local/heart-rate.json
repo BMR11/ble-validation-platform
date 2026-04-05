@@ -1,6 +1,6 @@
 {
   "id": "heart-rate-monitor",
-  "name": "Heart Rate Monitor",
+  "name": "💓 Heart Rate Monitor",
   "version": "1.0",
   "description": "Emulates a BLE heart rate monitor with battery and device info",
   "advertising": {

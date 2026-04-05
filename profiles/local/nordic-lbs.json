@@ -1,6 +1,6 @@
 {
   "id": "nordic-lbs",
-  "name": "Nordic LED Button Service",
+  "name": "⚡ Nordic LED Button Service",
   "version": "1.0",
   "description": "Nordic LBS demo: button notifies central, LED writable by central",
   "advertising": {

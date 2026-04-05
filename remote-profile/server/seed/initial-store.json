@@ -9,7 +9,7 @@
   "profiles": [
     {
       "profileId": "heart-rate-monitor",
-      "name": "Heart Rate Monitor",
+      "name": "💓 Heart Rate Monitor",
       "category": "medical",
       "notes": "Seeded from profiles/local; v2 adds vendor extension service.",
       "versions": [
@@ -20,7 +20,7 @@
           "changelog": "Initial published profile (matches local JSON).",
           "document": {
             "id": "heart-rate-monitor",
-            "name": "Heart Rate Monitor",
+            "name": "💓 Heart Rate Monitor",
             "version": "1.0",
             "description": "Emulates a BLE heart rate monitor with battery and device info",
             "advertising": {
@@ -222,7 +222,7 @@
           "changelog": "Added vendor extension service with read-only build tag.",
           "document": {
             "id": "heart-rate-monitor",
-            "name": "Heart Rate Monitor",
+            "name": "💓 Heart Rate Monitor",
             "version": "2.0",
             "description": "Heart rate + battery + optional vendor extension GATT service (remote profile v2 story).",
             "advertising": {
@@ -445,7 +445,7 @@
           "changelog": "Draft for future firmware alignment (demo only).",
           "document": {
             "id": "heart-rate-monitor",
-            "name": "Heart Rate Monitor",
+            "name": "💓 Heart Rate Monitor",
             "version": "3.0-draft",
             "description": "Work in progress — not published to peripherals.",
             "advertising": {
@@ -665,7 +665,7 @@
     },
     {
       "profileId": "nordic-lbs",
-      "name": "Nordic LED Button Service",
+      "name": "⚡ Nordic LED Button Service",
       "category": "vendor",
       "notes": "v1 = LBS only; v2 = adds battery service like local bundle.",
       "versions": [
@@ -676,7 +676,7 @@
           "changelog": "LBS only — no battery GATT service.",
           "document": {
             "id": "nordic-lbs",
-            "name": "Nordic LED Button Service",
+            "name": "⚡ Nordic LED Button Service",
             "version": "1.0",
             "description": "Nordic LBS: LED + button only (no battery service yet).",
             "advertising": {
@@ -835,7 +835,7 @@
           "changelog": "Added standard Battery service (0x180F) with simulated drain.",
           "document": {
             "id": "nordic-lbs",
-            "name": "Nordic LED Button Service",
+            "name": "⚡ Nordic LED Button Service",
             "version": "1.0",
             "description": "Nordic LBS demo: button notifies central, LED writable by central",
             "advertising": {

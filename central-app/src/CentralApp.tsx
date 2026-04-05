@@ -597,7 +597,7 @@ export default function CentralApp() {
               >
                 <Text style={styles.cardTitle}>{DEMO_TARGETS[id].label}</Text>
                 <Text style={styles.cardHint}>
-                  Names: {DEMO_TARGETS[id].nameHints.join(', ')}
+                  [{DEMO_TARGETS[id].nameHints.join(', ')}]
                 </Text>
               </TouchableOpacity>
             );

@@ -24,7 +24,8 @@ export interface DemoTarget {
 export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
   'heart-rate-monitor': {
     id: 'heart-rate-monitor',
-    label: 'Heart Rate Monitor',
+    /** 💓 — keep in sync with `profiles/local/heart-rate.json` `name`. */
+    label: '💓 Heart Rate Monitor',
     nameHints: ['rn_ble_hr_demo'],
     scanServiceUuid: toFullUuid16('180D'),
     services: {
@@ -40,7 +41,8 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
   },
   'nordic-lbs': {
     id: 'nordic-lbs',
-    label: 'Nordic LBS',
+    /** ⚡ — keep in sync with `profiles/local/nordic-lbs.json` `name`. */
+    label: '⚡ Nordic LED Button Service',
     nameHints: ['my_lbs'],
     scanServiceUuid: '00001523-1212-efde-1523-785feabcd123',
     services: {
