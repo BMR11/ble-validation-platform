@@ -286,4 +286,10 @@ Peripheral BLE engine and types live in the vendored **`rn-ble-peripheral-module
 
 ## Git
 
+Canonical remote: **`https://github.com/BMR11/ble-validation-platform`**. After a GitHub rename, update any local clone with:
+
+`git remote set-url origin https://github.com/BMR11/ble-validation-platform.git`
+
 The repo root is a normal Git working tree (no nested repos under `remote-profile/`). Use **local Git** only as your policy requires; `.gitignore` excludes `node_modules`, build outputs, `remote-profile/server/data/store.json`, and common IDE artifacts.
+
+**Note:** Native app IDs are unchanged (for example `com.bleperipheraldemo`, `BlePeripheralDemo`, `BleCentralDemo`) so existing installs, signing, and automation keep working; only the **repository** and **npm package folder names** use `ble-validation-platform`.

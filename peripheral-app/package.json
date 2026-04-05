@@ -1,5 +1,5 @@
 {
-  "name": "ble-device-emulator-peripheral",
+  "name": "ble-validation-platform-peripheral",
   "version": "0.0.1",
   "private": true,
   "scripts": {

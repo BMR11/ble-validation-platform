@@ -1,5 +1,5 @@
 {
-  "name": "ble-device-emulator-demo-automation",
+  "name": "ble-validation-platform-automation",
   "private": true,
   "description": "E2E helpers using Callstack agent-device + adb for BLE demo apps",
   "scripts": {
