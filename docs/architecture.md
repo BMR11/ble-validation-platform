@@ -43,7 +43,7 @@ flowchart LR
 
 ## Peripheral automation (Android)
 
-The peripheral app supports **ADB broadcast intents** for automation. When `registerBroadcastReceiver` is called, the native module forwards intents matching configured actions to JavaScript. The `ProfileApp` handles commands such as `AUTOMATION_START_PERIPHERAL`, `AUTOMATION_BUTTON_ON`, `AUTOMATION_BATTERY_PLUS_10`, and `AUTOMATION_SHOW_LOGS` — see `automation/` and `peripheral-app/src/ProfileApp.tsx` for details.
+The peripheral app supports **ADB broadcast intents** for automation. When `registerBroadcastReceiver` is called, the native module forwards intents matching configured actions to JavaScript. The `ProfileApp` handles commands such as `TRG_START_PERIPHERAL`, `TRG_BUTTON_ON`, `TRG_BATTERY_PLUS_10`, and `TRG_SHOW_LOGS` — see `automation/` and `peripheral-app/src/ProfileApp.tsx` for details.
 
 ## Design choices
 

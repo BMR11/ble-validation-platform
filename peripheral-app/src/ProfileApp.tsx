@@ -382,16 +382,16 @@ export default function ProfileApp() {
       }
       const cmd = rawCmd.trim();
 
-      if (cmd === 'AUTOMATION_SELECT_LOCAL') {
+      if (cmd === 'TRG_SELECT_LOCAL') {
         setProfileSource('local');
         addLog('info', '[automation] profile source: Local');
         return;
       }
 
-      if (cmd === 'AUTOMATION_SELECT_PROFILE') {
+      if (cmd === 'TRG_SELECT_PROFILE') {
         const pid = extras.profileId;
         if (typeof pid !== 'string' || !pid.trim()) {
-          addLog('error', '[automation] AUTOMATION_SELECT_PROFILE: missing profileId');
+          addLog('error', '[automation] TRG_SELECT_PROFILE: missing profileId');
           return;
         }
         const p = getProfileById(pid.trim());
@@ -404,7 +404,7 @@ export default function ProfileApp() {
         return;
       }
 
-      if (cmd === 'AUTOMATION_START_PERIPHERAL') {
+      if (cmd === 'TRG_START_PERIPHERAL') {
         const pid = extras.profileId;
         let profile: BleProfile | undefined;
         if (typeof pid === 'string' && pid.trim()) {
@@ -417,7 +417,7 @@ export default function ProfileApp() {
           profile = selectedProfileRef.current ?? undefined;
         }
         if (!profile) {
-          addLog('error', '[automation] No profile (set AUTOMATION_SELECT_PROFILE or pass profileId)');
+          addLog('error', '[automation] No profile (set TRG_SELECT_PROFILE or pass profileId)');
           return;
         }
         void startPeripheralWithProfile(profile);
@@ -425,25 +425,25 @@ export default function ProfileApp() {
         return;
       }
 
-      if (cmd === 'AUTOMATION_BUTTON_ON') {
+      if (cmd === 'TRG_BUTTON_ON') {
         handleValueChange(LBS_SERVICE_UUID, LBS_BUTTON_CHAR_UUID, 1);
         addLog('info', '[automation] Button ON');
         return;
       }
 
-      if (cmd === 'AUTOMATION_BUTTON_OFF') {
+      if (cmd === 'TRG_BUTTON_OFF') {
         handleValueChange(LBS_SERVICE_UUID, LBS_BUTTON_CHAR_UUID, 0);
         addLog('info', '[automation] Button OFF');
         return;
       }
 
-      if (cmd === 'AUTOMATION_SHOW_LOGS') {
+      if (cmd === 'TRG_SHOW_LOGS') {
         setShowLogs(true);
         addLog('info', '[automation] Logs panel shown');
         return;
       }
 
-      if (cmd === 'AUTOMATION_BATTERY_PLUS_10' || cmd === 'AUTOMATION_BATTERY_MINUS_10') {
+      if (cmd === 'TRG_BATTERY_PLUS_10' || cmd === 'TRG_BATTERY_MINUS_10') {
         const profile = selectedProfileRef.current;
         if (!profile) {
           addLog('error', '[automation] No active profile for battery update');
@@ -467,7 +467,7 @@ export default function ProfileApp() {
           return;
         }
         const cur = (charValuesRef.current.get(charUUID.toUpperCase()) as number) ?? 50;
-        const delta = cmd === 'AUTOMATION_BATTERY_PLUS_10' ? 10 : -10;
+        const delta = cmd === 'TRG_BATTERY_PLUS_10' ? 10 : -10;
         const next = Math.max(0, Math.min(100, cur + delta));
         handleValueChange(svcUUID, charUUID, next);
         addLog('info', `[automation] Battery ${cur} → ${next}`);

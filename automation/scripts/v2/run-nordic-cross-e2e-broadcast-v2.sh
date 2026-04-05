@@ -279,14 +279,14 @@ v2_peri "Wait for the peripheral app to be ready for remote commands"
 sleep "$(awk "BEGIN { printf \"%.3f\", ${V2_POST_BOOTSTRAP_MS}/1000 }")"
 
 v2_peri "Use Local profiles"
-v2_broadcast AUTOMATION_SELECT_LOCAL
+v2_broadcast TRG_SELECT_LOCAL
 v2_peri "Select the Nordic LED/Button demo"
-v2_broadcast AUTOMATION_SELECT_PROFILE -- --es profileId nordic-lbs
+v2_broadcast TRG_SELECT_PROFILE -- --es profileId nordic-lbs
 v2_peri "Start advertising so the iPhone can find it"
-v2_broadcast AUTOMATION_START_PERIPHERAL -- --es profileId nordic-lbs
+v2_broadcast TRG_START_PERIPHERAL -- --es profileId nordic-lbs
 
 v2_peri "Show logs panel"
-v2_broadcast AUTOMATION_SHOW_LOGS
+v2_broadcast TRG_SHOW_LOGS
 
 ad_close_peripheral
 
@@ -309,19 +309,19 @@ v2_cent "Turn the LED off"
 ios_replay_v2_segment "${AUTO_DIR}/replays/ios/v2-ios-04-led-off.ad"
 
 v2_peri "Update the button state (on, then off)"
-v2_broadcast AUTOMATION_BUTTON_ON
-v2_broadcast AUTOMATION_BUTTON_OFF
+v2_broadcast TRG_BUTTON_ON
+v2_broadcast TRG_BUTTON_OFF
 
 v2_peri "Update battery level (+10 three times, -10 twice)"
-v2_broadcast AUTOMATION_BATTERY_PLUS_10
+v2_broadcast TRG_BATTERY_PLUS_10
 sleep 1
-v2_broadcast AUTOMATION_BATTERY_PLUS_10
+v2_broadcast TRG_BATTERY_PLUS_10
 sleep 1
-v2_broadcast AUTOMATION_BATTERY_PLUS_10
+v2_broadcast TRG_BATTERY_PLUS_10
 sleep 1
-v2_broadcast AUTOMATION_BATTERY_MINUS_10
+v2_broadcast TRG_BATTERY_MINUS_10
 sleep 1
-v2_broadcast AUTOMATION_BATTERY_MINUS_10
+v2_broadcast TRG_BATTERY_MINUS_10
 
 v2_done "Close automation sessions, stop the central app, and stop the peripheral app"
 ble_v2_close_sessions_and_stop_peripheral_app

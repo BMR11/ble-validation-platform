@@ -217,7 +217,7 @@ https://github.com/user-attachments/assets/2bc2249c-c91a-4e0e-b185-dc0945db414b
 
 
 
-This is an **alternate** full run to **`npm run e2e:lbs-battery`**. It drives the **peripheral** with **`adb shell am broadcast`** (custom `AUTOMATION_*` commands handled in **`peripheral-app`** `ProfileApp.tsx`) instead of agent-device **tap** replays on Android. The **central** still uses **agent-device** replay (`.ad` UI automation) for Nordic target → Scan → Connect → LED ON/OFF.
+This is an **alternate** full run to **`npm run e2e:lbs-battery`**. It drives the **peripheral** with **`adb shell am broadcast`** (custom `TRG_*` commands handled in **`peripheral-app`** `ProfileApp.tsx`) instead of agent-device **tap** replays on Android. The **central** still uses **agent-device** replay (`.ad` UI automation) for Nordic target → Scan → Connect → LED ON/OFF.
 
 **Prerequisites** are the same as Parts **1–3** (physical Android + iPhone, both apps installed, `cd automation && npm install`, **`automation/.env`** with **`IOS_DEVICE`** and app names — see Part 2).
 
@@ -244,10 +244,10 @@ Step lines stay plain (what happens on the **peripheral** vs **iPhone**). Full *
 | **Cleanup** | `adb` **force-stop** package | **`close <bundle>`** (stop **Central App**) + **close** sessions (best-effort). All close calls run **in parallel**. |
 | **Bootstrap** | **`scripts/adb-peripheral-bootstrap.sh`**: `wait-for-device`, **pm grant** BT perms, **monkey** launch app | — |
 | **Post-launch wait** | Sleep **`V2_POST_BOOTSTRAP_MS`** (default **1500** ms) so RN can **`registerBroadcastReceiver`** before intents arrive | — |
-| **Broadcasts 1–4** | **`am broadcast`**: `AUTOMATION_SELECT_LOCAL` → `AUTOMATION_SELECT_PROFILE` (`profileId=nordic-lbs`) → `AUTOMATION_START_PERIPHERAL` (`profileId=nordic-lbs`) → `AUTOMATION_SHOW_LOGS`. Gap between commands: **`V2_BROADCAST_GAP_MS`** (default **200** ms). | — |
+| **Broadcasts 1–4** | **`am broadcast`**: `TRG_SELECT_LOCAL` → `TRG_SELECT_PROFILE` (`profileId=nordic-lbs`) → `TRG_START_PERIPHERAL` (`profileId=nordic-lbs`) → `TRG_SHOW_LOGS`. Gap between commands: **`V2_BROADCAST_GAP_MS`** (default **200** ms). | — |
 | **Central UI** | — | **`agent-device open`** `CENTRAL_APP_NAME`, then **five** replay segments **`v2-ios-00` … `v2-ios-04`**: Show logs → Nordic + Scan + wait → Connect + wait → LED ON → LED OFF (one 🔵 line per segment). Monolithic **`v2-nordic-connect-led.ad`** kept for manual full replay. |
-| **Broadcasts 5–6** | `AUTOMATION_BUTTON_ON` → `AUTOMATION_BUTTON_OFF` | — |
-| **Broadcasts 7–11** | `AUTOMATION_BATTERY_PLUS_10` ×3 → `AUTOMATION_BATTERY_MINUS_10` ×2 (1 s gap between each). Default battery 50 → 60 → 70 → 80 → 70 → 60. | — |
+| **Broadcasts 5–6** | `TRG_BUTTON_ON` → `TRG_BUTTON_OFF` | — |
+| **Broadcasts 7–11** | `TRG_BATTERY_PLUS_10` ×3 → `TRG_BATTERY_MINUS_10` ×2 (1 s gap between each). Default battery 50 → 60 → 70 → 80 → 70 → 60. | — |
 | **Teardown** | **force-stop** + session close | **`close <bundle>`** (stop central app) + session **close** |
 
 iOS is **not** opened before Android: the first `open` for central runs when the iOS replay phase starts (after the peripheral is advertising via broadcasts).
@@ -259,14 +259,14 @@ iOS is **not** opened before Android: the first `open` for central runs when the
 From the repo root:
 
 ```bash
-bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_SELECT_LOCAL
-bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_START_PERIPHERAL -- --es profileId nordic-lbs
-bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_SHOW_LOGS
-bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_BATTERY_PLUS_10
-bash automation/scripts/v2/adb-send-automation-broadcast.sh AUTOMATION_BATTERY_MINUS_10
+bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_SELECT_LOCAL
+bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_START_PERIPHERAL -- --es profileId nordic-lbs
+bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_SHOW_LOGS
+bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_BATTERY_PLUS_10
+bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_BATTERY_MINUS_10
 ```
 
-Available commands: `AUTOMATION_SELECT_LOCAL`, `AUTOMATION_SELECT_PROFILE` (needs `--es profileId <id>`), `AUTOMATION_START_PERIPHERAL` (needs `--es profileId <id>`), `AUTOMATION_BUTTON_ON`, `AUTOMATION_BUTTON_OFF`, `AUTOMATION_SHOW_LOGS`, `AUTOMATION_BATTERY_PLUS_10`, `AUTOMATION_BATTERY_MINUS_10`.
+Available commands: `TRG_SELECT_LOCAL`, `TRG_SELECT_PROFILE` (needs `--es profileId <id>`), `TRG_START_PERIPHERAL` (needs `--es profileId <id>`), `TRG_BUTTON_ON`, `TRG_BUTTON_OFF`, `TRG_SHOW_LOGS`, `TRG_BATTERY_PLUS_10`, `TRG_BATTERY_MINUS_10`.
 
 The peripheral app should be **foreground**; check in-app logs / **logcat** for **`[automation]`** lines when a command is handled.
 
@@ -276,7 +276,7 @@ Set in **`automation/.env`** (see **`.env.example`**). Same base vars as Part 5 
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `V2_POST_BOOTSTRAP_MS` | `1500` | Wait after **monkey** launch before the first **`AUTOMATION_*`** broadcast so JS mounts and the broadcast receiver is registered. **Increase** if `AUTOMATION_START_PERIPHERAL` appears to do nothing. |
+| `V2_POST_BOOTSTRAP_MS` | `1500` | Wait after **monkey** launch before the first **`TRG_*`** broadcast so JS mounts and the broadcast receiver is registered. **Increase** if `TRG_START_PERIPHERAL` appears to do nothing. |
 | `V2_BROADCAST_GAP_MS` | `200` | Pause between consecutive broadcast shell commands. |
 | `SKIP_ADB_BOOTSTRAP` | `0` | Set to `1` to skip launch + grants if the peripheral is already running with permissions OK. |
 | `V2_VERBOSE` | `0` | Set to `1` to print **agent-device** / **adb** child output. **`V2_DEBUG=1`** or **`-d`** / **`--debug`** also forces this on. |
@@ -310,7 +310,7 @@ Set these in the shell **before** `npm run e2e:lbs-battery`:
 | `SKIP_ADB_BOOTSTRAP=1` | Skip step 0 if you already launched the peripheral and granted permissions. |
 | `ANDROID_PERIPHERAL_PACKAGE` | Default `com.bleperipheraldemo` (debug). Use `com.bleperipheraldemo.release` for the **release** APK from this repo. |
 | `IOS_CENTRAL_BUNDLE_REPLAY` | Default `org.reactjs.native.example.BleCentralDemo`. The script removes this `open …` line from temp replays because the real open is done via **`CENTRAL_APP_NAME`**. |
-| `V2_POST_BOOTSTRAP_MS` | **V2 script only** (Part 4b). Default `2000`. Wait after adb launch before **`AUTOMATION_*`** broadcasts. |
+| `V2_POST_BOOTSTRAP_MS` | **V2 script only** (Part 4b). Default `2000`. Wait after adb launch before **`TRG_*`** broadcasts. |
 | `V2_BROADCAST_GAP_MS` | **V2 script only** (Part 4b). Default `450`. Delay between broadcast commands. |
 | `V2_VERBOSE` | **V2 script only** (Part 4b). Default `0`. Set to `1` to show full **agent-device** / **adb** output. |
 

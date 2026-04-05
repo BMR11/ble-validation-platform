@@ -3,12 +3,12 @@
 # Uses action com.bleperipheraldemo.CUSTOM_COMMAND and extras expected by ProfileApp.
 #
 # Usage:
-#   adb-send-automation-broadcast.sh AUTOMATION_COMMAND [-- extra adb args...]
+#   adb-send-automation-broadcast.sh TRG_COMMAND [-- extra adb args...]
 #
 # Examples:
-#   adb-send-automation-broadcast.sh AUTOMATION_SELECT_LOCAL
-#   adb-send-automation-broadcast.sh AUTOMATION_SELECT_PROFILE -- --es profileId nordic-lbs
-#   adb-send-automation-broadcast.sh AUTOMATION_START_PERIPHERAL -- --es profileId nordic-lbs
+#   adb-send-automation-broadcast.sh TRG_SELECT_LOCAL
+#   adb-send-automation-broadcast.sh TRG_SELECT_PROFILE -- --es profileId nordic-lbs
+#   adb-send-automation-broadcast.sh TRG_START_PERIPHERAL -- --es profileId nordic-lbs
 #
 # Env: ANDROID_SERIAL, ANDROID_PERIPHERAL_PACKAGE (default com.bleperipheraldemo)
 set -euo pipefail
@@ -21,7 +21,7 @@ ble_automation_load_automation_env "${AUTO_DIR}"
 
 CMD="${1:-}"
 if [[ -z "${CMD}" ]]; then
-  echo "Usage: $0 AUTOMATION_COMMAND [-- extra am broadcast flags]" >&2
+  echo "Usage: $0 TRG_COMMAND [-- extra am broadcast flags]" >&2
   exit 1
 fi
 shift
