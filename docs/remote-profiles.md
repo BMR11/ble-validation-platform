@@ -45,6 +45,11 @@ Only if you build the admin UI with a fixed API origin: copy **`client/.env.exam
 
 The seeded **`demo@example.com` / `demo123`** account exists only for this demo admin UI. It is documented publicly and must not be reused as real security.
 
+### Demo: Using remote profile for Heart Rate Monitor Service
+
+https://github.com/user-attachments/assets/9427c3cb-7782-45fd-9aa3-555825ccd42c
+
+
 ## Related docs
 
 - [remote-profile-api.md](./remote-profile-api.md) — HTTP API reference.
