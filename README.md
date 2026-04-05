@@ -10,7 +10,7 @@ A **profile-driven Bluetooth Low Energy (BLE) device emulator** with a **periphe
 - inject failure scenarios
 - validate central app behavior end-to-end
 
-## 🧠 Overview
+## Overview
 
 This repository provides a **reference implementation of a profile-driven BLE validation platform**.
 
@@ -52,7 +52,7 @@ It enables:
 - Run multiple simulated peripherals on commodity devices (Android/iOS/Mac)
 - Enables parallel testing without complex hardware setups
 
-### 💰 Reduced Cost of HIL
+### 💰 Reduced Cost of HIL (hardware-in-the-loop) testing
 
 - Eliminates dependency on expensive physical setups
 - Uses existing mobile devices to emulate BLE peripherals
@@ -68,7 +68,7 @@ It enables:
   - switching between device types
   - testing multiple configurations using the same app
 
-## 🧨 Failure & Edge Case Testing
+## Failure & Edge Case Testing
 
 The platform enables controlled simulation of scenarios that are difficult to reproduce using real hardware:
 
@@ -262,13 +262,19 @@ This approach is designed to complement traditional hardware-based testing by:
 - improving test coverage through reproducible scenarios
 - reducing dependency on physical setups during development and QA
 
-## Future direction
+## 🔮 Future direction
 
-- **Automation**: orchestrate both apps and assert logs/UI via [Agent Device (Callstack)](https://github.com/callstack/agent-device) or similar; see [automation/README.md](automation/README.md).
-- **Firmware-linked profile rollout**: documented only; see [remote-profile/README.md](remote-profile/README.md).
-- **Drag-and-drop profile builder** for rapid profile creation.
-- **Record real device communication → generate reusable profiles** for faster modeling.
-- **AI-assisted behavior modeling** and **cloud-based profile registry**.
+- **Automation**: Orchestrate both central and peripheral apps and validate behavior end-to-end using tools like [Agent Device (Callstack)](https://github.com/callstack/agent-device), enabling repeatable and scalable BLE validation workflows.
+
+- **Firmware–Profile Sync Platform**: Enable automatic synchronization between device firmware and BLE profiles. Changes to services or characteristics in firmware (e.g., via pull requests) can trigger a CI-integrated webhook pipeline that updates or generates corresponding profiles in the remote-profile system, keeping simulated devices aligned with real firmware behavior.
+
+- **Drag-and-Drop Profile Builder**: Provide a UI-based workflow to create and modify BLE profiles without code, reducing the barrier to entry for QA and cross-functional teams.
+
+- **Telemetry & AI-Driven Profile Generation**: Capture real-world BLE communication traces between central and peripheral devices and use them to generate reusable profiles. Future enhancements may leverage AI/ML techniques to infer device behavior patterns, simulate realistic edge cases, and automatically adapt profiles based on observed system behavior.
+
+- **Cloud Profile Registry**: Introduce a centralized, versioned registry for BLE profiles with access control, enabling teams to share, reuse, and manage device definitions across environments.
+
+- **Advanced OTA Simulation**: Extend the platform to simulate firmware update workflows and edge cases, enabling validation of OTA pipelines without requiring actual hardware updates.
 
 ## License / upstream
 
