@@ -110,7 +110,7 @@ export class ProfileEngine {
         profile.advertising.serviceUUIDs?.slice() ||
         this.deriveServiceUUIDs(profile);
 
-      // Note: only picking up first service UUID which must be primary, if we include all like battery+deviceinfo, its throing error for data length
+      // Only advertise the first (primary) service UUID; including all (battery + DIS) causes a data-length error
       await startAdvertising({
         localName: profile.advertising.localName,
         serviceUUIDs: [serviceUUIDs[0]],

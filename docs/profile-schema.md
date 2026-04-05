@@ -8,9 +8,11 @@ Profiles are JSON documents consumed by the peripheral **`ProfileEngine`** (see 
 |-------|----------|-------------|
 | `id` | yes | Stable identifier (e.g. `heart-rate-monitor`). |
 | `name` | yes | Human-readable name. |
+| `version` | no | Profile schema version string (e.g. `"1.0"`). |
 | `description` | no | Shown in the peripheral UI. |
 | `advertising.localName` | yes | GAP name used when advertising. |
 | `advertising.deviceName` | no | Optional adapter/device name where supported. |
+| `advertising.serviceUUIDs` | no | Explicit UUIDs in advertising data. When omitted, derived from `services` (+DIS if `deviceInfo` is present). |
 | `deviceInfo` | no | Shorthand for standard **Device Information Service** (0x180A). |
 | `stateMachine` | no | Idle/active/error style flows; transitions on subscribe, unsubscribe, write, timer, manual. |
 | `services` | yes | List of GATT services and characteristics. |

@@ -82,16 +82,16 @@ flowchart TD
 
 ## 4. GATT Registration Order
 
-Characteristics must be added **before** their parent service:
+The service is created first, then characteristics are added to it:
 
 ```
 for each service:
+  addService(svcUUID, primary)
   for each characteristic:
     addCharacteristicToServiceBase64(svcUUID, charUUID, props, perms, value)
-  addService(svcUUID, primary)
 ```
 
-This is the correct order for CoreBluetooth (iOS). The engine standardises on this for both platforms.
+The native code stores the service in a map that `addCharacteristicToService` looks up by UUID, so the service must exist before its characteristics are added.
 
 ---
 

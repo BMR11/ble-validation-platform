@@ -438,7 +438,6 @@ export default function CentralApp() {
       const lbs = DEMO_TARGETS['nordic-lbs'].services.lbs!;
       const bat = DEMO_TARGETS['nordic-lbs'].services.battery!;
       const peripheralInfo = await BleManager.retrieveServices(peripheralId);
-      console.log('peripheralInfo', JSON.stringify({peripheralInfo, lbs, bat}));
       addLog('info', 'Services discovered: ' + JSON.stringify({peripheralInfo, lbs, bat}));
       await BleManager.startNotification(
         peripheralId,
@@ -590,9 +589,6 @@ export default function CentralApp() {
             />
             <Text style={styles.title}>BLE Central App</Text>
           </View>
-          {/* <Text style={styles.sub}>
-            Matches peripheral profiles in ../profiles (scan by service UUID).
-          </Text> */}
         </View>
         <ScrollView
           style={styles.scrollArea}

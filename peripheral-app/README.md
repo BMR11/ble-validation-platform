@@ -68,13 +68,13 @@ This is one way to run your app — you can also build it directly from Android 
 
 ## Building Release APK
 
-Use Gradle from the example app (same as any React Native project). Set `versionCode` and `versionName` in `example/android/app/build.gradle` if you need to change them.
+Use Gradle (same as any React Native project). Set `versionCode` and `versionName` in `android/app/build.gradle` if you need to change them.
 
 ```sh
-cd example/android && ./gradlew assembleRelease --no-daemon
+cd android && ./gradlew assembleRelease --no-daemon
 ```
 
-This example renames the release APK to `blep-example-release-{versionName}-{versionCode}.apk` under `example/android/app/build/outputs/apk/release/`. Install with `adb install -r <path-to-apk>` when you want to deploy to a device.
+The release APK is placed under `android/app/build/outputs/apk/release/`. Install with `adb install -r <path-to-apk>` when you want to deploy to a device.
 
 ## Step 3: Modify your app
 
@@ -118,20 +118,20 @@ To learn more about React Native, take a look at the following resources:
 
 # Quick install
 
-1. `yarn install`
-2. `yarn example:android` for Android
-3. `yarn example:ios` for iOS
+1. `npm install`
+2. `npm run android` for Android
+3. `npm run ios` for iOS
 
 # ADB broadcast intents (optional)
 
-The native module can forward Android broadcast intents to JavaScript when you register actions with `registerBroadcastReceiver`—useful for **ADB/automation** that drives the same code paths as your BLE peripheral (see the guide for the full pattern). The stock example app (`App.tsx`) logs received broadcasts and focuses on standard GATT demos; it does not ship product-specific handlers.
+The native module can forward Android broadcast intents to JavaScript when you register actions with `registerBroadcastReceiver`. This is used for **ADB/automation** to drive the same code paths as the BLE peripheral (see `automation/` for scripts and patterns).
 
-To try a generic broadcast from the repo root (scripts live in `example/scripts/`):
+`ProfileApp.tsx` handles commands such as `AUTOMATION_START_PERIPHERAL`, `AUTOMATION_BUTTON_ON/OFF`, `AUTOMATION_BATTERY_PLUS_10`, and `AUTOMATION_SHOW_LOGS`.
+
+To try a broadcast via ADB (see `automation/scripts/v2/adb-send-automation-broadcast.sh`):
 
 ```sh
-yarn send-broadcast
+adb shell am broadcast -a com.bleperipheraldemo.CUSTOM_COMMAND --es command AUTOMATION_SHOW_LOGS
 ```
 
-This uses action `com.bleperipheraldemo.CUSTOM_COMMAND`. Your own app should register the same action string (or any custom action) in JS and handle extras as needed.
-
-See [Android broadcast intents](../docs/guides/android-broadcast-intents.md) for API details.
+Your own app should register the same action string (or any custom action) in JS and handle extras as needed. See [automation/README.md](../automation/README.md) for more details.

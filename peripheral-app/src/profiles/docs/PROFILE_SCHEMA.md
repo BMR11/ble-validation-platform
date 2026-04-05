@@ -77,10 +77,10 @@ If present, the engine auto-creates a Device Information Service (UUID `180A`) w
 | ------------------ | ------------- | ----------- |
 | `manufacturerName` | `2A29`        | `"Unknown"` |
 | `modelNumber`      | `2A24`        | `"Unknown"` |
-| `serialNumber`     | `2A25`        | `"000000"`  |
-| `hardwareRevision` | `2A27`        | `"1.0"`     |
-| `firmwareRevision` | `2A26`        | `"1.0"`     |
-| `softwareRevision` | `2A28`        | `"1.0"`     |
+| `serialNumber`     | `2A25`        | `"Unknown"` |
+| `hardwareRevision` | `2A27`        | `"Unknown"` |
+| `firmwareRevision` | `2A26`        | `"Unknown"` |
+| `softwareRevision` | `2A28`        | `"Unknown"` |
 
 Each field becomes a characteristic with `properties: ["read"]`, `permissions: ["readable"]`.
 

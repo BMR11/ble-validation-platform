@@ -34,8 +34,8 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         measurement: toFullUuid16('2A37'),
       },
       battery: {
-        service: isiOS ? '180F' : toFullUuid16('180F'),// For iOS we need shortformat, for android we need full format
-        level: isiOS ? '2A19' : toFullUuid16('2A19'),// For iOS we need shortformat, for android we need full format 
+        service: isiOS ? '180F' : toFullUuid16('180F'), // iOS needs short format; Android needs full 128-bit
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),   // iOS needs short format; Android needs full 128-bit
       },
     },
   },
@@ -52,8 +52,8 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         led: '00001525-1212-efde-1523-785feabcd123',
       },
       battery: {
-        service: isiOS ? '180F' : toFullUuid16('180F'),// For iOS we need shortformat, for android we need full format
-        level: isiOS ? '2A19' : toFullUuid16('2A19'),// For iOS we need shortformat, for android we need full format
+        service: isiOS ? '180F' : toFullUuid16('180F'), // iOS needs short format; Android needs full 128-bit
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),   // iOS needs short format; Android needs full 128-bit
       },
     },
   },

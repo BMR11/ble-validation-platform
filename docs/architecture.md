@@ -36,10 +36,14 @@ flowchart LR
 ## Central stack
 
 1. **`BleManager.start`** — initialize the native central manager.
-2. **`scan`** — filter by primary service UUID aligned with the selected demo target (`src/centralTargets.ts`). Scan is stopped on connect; the UI blocks another scan or target change until disconnect.
+2. **`scan`** — for standard 16-bit services (Heart Rate), the OS service UUID filter narrows results. For 128-bit UUIDs (Nordic LBS), a **broad scan** runs instead and `matchesTarget()` in JS filters by advertised service UUID or name hints (e.g. `my_lbs`). Scan is stopped on connect; the UI blocks another scan or target change until disconnect.
 3. **`connect` → `retrieveServices`** — discover the GATT layout.
 4. **DIS reads** (`src/disRead.ts`) — optional reads of standard Device Information characteristics (0x180A) for the **Info** panel when the peripheral exposes them.
 5. **`startNotification` / `write`** — heart rate + battery notifications, or Nordic LBS button notifications and LED writes (**LED ON** before **LED OFF** in the demo UI).
+
+## Peripheral automation (Android)
+
+The peripheral app supports **ADB broadcast intents** for automation. When `registerBroadcastReceiver` is called, the native module forwards intents matching configured actions to JavaScript. The `ProfileApp` handles commands such as `AUTOMATION_START_PERIPHERAL`, `AUTOMATION_BUTTON_ON`, `AUTOMATION_BATTERY_PLUS_10`, and `AUTOMATION_SHOW_LOGS` — see `automation/` and `peripheral-app/src/ProfileApp.tsx` for details.
 
 ## Design choices
 
