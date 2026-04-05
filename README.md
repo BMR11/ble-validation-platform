@@ -159,6 +159,9 @@ Short version:
 2. Start **central-app** → matching target → **Scan** → **Connect**.
 3. Confirm **notifications**, optional **Info (DIS)**, and **LED ON** then **LED OFF** (Nordic) in UI and logs.
 
+https://github.com/user-attachments/assets/f006b81c-21bd-40e6-8a2f-f46200ce6cea
+
+
 ## Use cases
 
 - **BLE testing** — repeatable peripheral behavior without custom firmware.
