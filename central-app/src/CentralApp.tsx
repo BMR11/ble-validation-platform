@@ -187,6 +187,8 @@ export default function CentralApp() {
   const [devices, setDevices] = useState<Peripheral[]>([]);
   const [connected, setConnected] = useState<Peripheral | null>(null);
   const [busy, setBusy] = useState(false);
+  /** While connect is in progress (before `connected` is set); cleared when connect flow ends. */
+  const [connectingId, setConnectingId] = useState<string | null>(null);
   /** Numeric BPM for HR graph; null when unknown or disconnected. */
   const [hrBpm, setHrBpm] = useState<number | null>(null);
   const [batteryLine, setBatteryLine] = useState<string>('--');
@@ -495,6 +497,7 @@ export default function CentralApp() {
         /* not scanning or native already idle */
       }
       setBusy(true);
+      setConnectingId(p.id);
       setDeviceInfoExpanded(false);
       setDeviceInfoRows(null);
       try {
@@ -513,6 +516,7 @@ export default function CentralApp() {
         addLog('error', `Connect failed: ${e}`);
       } finally {
         setBusy(false);
+        setConnectingId(null);
       }
     },
     [addLog, clearScanFallbackTimer, setupHeart, setupNordic, targetId]
@@ -650,14 +654,43 @@ export default function CentralApp() {
                 ''
               ).trim();
               const deviceA11yName = deviceTitle || d.id;
+              const targetLabel = DEMO_TARGETS[targetId].label;
               const isThisConnected = connected?.id === d.id;
+              const showRowBusy =
+                busy &&
+                (connectingId === d.id || connected?.id === d.id);
+              const infoButton = (
+                <TouchableOpacity
+                  testID="central-device-info"
+                  accessibilityLabel={
+                    deviceInfoExpanded
+                      ? 'Central device information expanded'
+                      : 'Central show device information'
+                  }
+                  style={[
+                    styles.deviceInfoSmall,
+                    deviceInfoExpanded && styles.deviceInfoSmallActive,
+                  ]}
+                  onPress={toggleDeviceInfo}
+                  disabled={busy}
+                >
+                  <Text
+                    style={[
+                      styles.deviceInfoSmallText,
+                      deviceInfoExpanded && styles.deviceInfoSmallTextActive,
+                    ]}
+                  >
+                    Info
+                  </Text>
+                </TouchableOpacity>
+              );
               return (
                 <View
                   key={d.id}
                   testID={`central-device-${d.id}`}
                   accessibilityLabel={
                     isThisConnected
-                      ? `Central device ${deviceA11yName} connected`
+                      ? `Central ${targetLabel}, ${deviceA11yName}, connected`
                       : undefined
                   }
                   style={[
@@ -669,33 +702,16 @@ export default function CentralApp() {
                     <>
                       <View style={styles.deviceCardHeader}>
                         <View style={styles.deviceHeaderLeft}>
-                          <Text style={styles.deviceName}>{deviceTitle || '(no name)'}</Text>
-                          <Text style={styles.deviceId}>{d.id}</Text>
+                          <Text style={styles.deviceTargetTitle}>{targetLabel}</Text>
                         </View>
                         <View style={styles.deviceHeaderActions}>
-                          <TouchableOpacity
-                            testID="central-device-info"
-                            accessibilityLabel={
-                              deviceInfoExpanded
-                                ? 'Central device information expanded'
-                                : 'Central show device information'
-                            }
-                            style={[
-                              styles.deviceInfoSmall,
-                              deviceInfoExpanded && styles.deviceInfoSmallActive,
-                            ]}
-                            onPress={toggleDeviceInfo}
-                            disabled={busy}
-                          >
-                            <Text
-                              style={[
-                                styles.deviceInfoSmallText,
-                                deviceInfoExpanded && styles.deviceInfoSmallTextActive,
-                              ]}
-                            >
-                              Info
-                            </Text>
-                          </TouchableOpacity>
+                          {showRowBusy && (
+                            <ActivityIndicator
+                              size="small"
+                              color="#8ab4d8"
+                              style={styles.deviceBusySpinner}
+                            />
+                          )}
                           <TouchableOpacity
                             testID="central-disconnect"
                             accessibilityLabel="Central disconnect"
@@ -707,26 +723,6 @@ export default function CentralApp() {
                           </TouchableOpacity>
                         </View>
                       </View>
-                      {deviceInfoExpanded && (
-                        <View style={styles.deviceInfoPanel}>
-                          {deviceInfoLoading ? (
-                            <ActivityIndicator color="#8ab4d8" />
-                          ) : deviceInfoRows && deviceInfoRows.length > 0 ? (
-                            deviceInfoRows.map((row) => (
-                              <View key={row.label} style={styles.deviceInfoLine}>
-                                <Text style={styles.deviceInfoLabel}>{row.label}</Text>
-                                <Text style={styles.deviceInfoValue} selectable>
-                                  {row.value}
-                                </Text>
-                              </View>
-                            ))
-                          ) : (
-                            <Text style={styles.deviceInfoEmpty}>
-                              No device information could be read (DIS may be absent).
-                            </Text>
-                          )}
-                        </View>
-                      )}
                       {targetId === 'heart-rate-monitor' && (
                         <>
                           <HeartRateGraph
@@ -735,10 +731,16 @@ export default function CentralApp() {
                             plotTestID="central-metric-hr-plot"
                           />
                           <View style={styles.metricRow}>
-                            <Text style={styles.metricBatteryIcon}>{BATTERY_EMOJI}</Text>
-                            <Text testID="central-metric-battery" style={styles.metric}>
-                              Battery: {batteryLine}
-                            </Text>
+                            <View style={styles.metricRowLeft}>
+                              <Text style={styles.metricBatteryIcon}>{BATTERY_EMOJI}</Text>
+                              <Text
+                                testID="central-metric-battery"
+                                style={[styles.metric, styles.metricInSplit]}
+                              >
+                                Battery: {batteryLine}
+                              </Text>
+                            </View>
+                            {infoButton}
                           </View>
                         </>
                       )}
@@ -777,53 +779,106 @@ export default function CentralApp() {
                             </View>
                           </View>
                           <View style={styles.ledControlRow}>
-                            <Text style={styles.ledSectionLabel}>LED:</Text>
-                            <View style={styles.ledBtnGroup}>
-                              <TouchableOpacity
-                                testID="central-led-on"
-                                accessibilityLabel="Central LED on"
-                                style={[
-                                  styles.ledPillBtn,
-                                  ledLit && styles.ledPillBtnSelected,
-                                ]}
-                                onPress={() => writeLed(true)}
-                                disabled={busy}
-                              >
-                                <Text style={[styles.ledPillEmoji, styles.ledEmojiOn]}>
-                                  {BULB_EMOJI}
-                                </Text>
-                                <Text style={styles.ledPillCaption}>ON</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                testID="central-led-off"
-                                accessibilityLabel="Central LED off"
-                                style={[
-                                  styles.ledPillBtn,
-                                  !ledLit && styles.ledPillBtnSelected,
-                                ]}
-                                onPress={() => writeLed(false)}
-                                disabled={busy}
-                              >
-                                <Text style={[styles.ledPillEmoji, styles.ledEmojiOff]}>
-                                  {BULB_EMOJI}
-                                </Text>
-                                <Text style={styles.ledPillCaption}>OFF</Text>
-                              </TouchableOpacity>
+                            <View style={styles.ledControlRowMain}>
+                              <Text style={styles.ledSectionLabel}>LED:</Text>
+                              <View style={styles.ledBtnGroup}>
+                                <TouchableOpacity
+                                  testID="central-led-on"
+                                  accessibilityLabel="Central LED on"
+                                  style={[
+                                    styles.ledPillBtn,
+                                    ledLit && styles.ledPillBtnSelected,
+                                  ]}
+                                  onPress={() => writeLed(true)}
+                                  disabled={busy}
+                                >
+                                  <Text style={[styles.ledPillEmoji, styles.ledEmojiOn]}>
+                                    {BULB_EMOJI}
+                                  </Text>
+                                  <Text style={styles.ledPillCaption}>ON</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  testID="central-led-off"
+                                  accessibilityLabel="Central LED off"
+                                  style={[
+                                    styles.ledPillBtn,
+                                    !ledLit && styles.ledPillBtnSelected,
+                                  ]}
+                                  onPress={() => writeLed(false)}
+                                  disabled={busy}
+                                >
+                                  <Text style={[styles.ledPillEmoji, styles.ledEmojiOff]}>
+                                    {BULB_EMOJI}
+                                  </Text>
+                                  <Text style={styles.ledPillCaption}>OFF</Text>
+                                </TouchableOpacity>
+                              </View>
                             </View>
+                            {infoButton}
                           </View>
                         </>
+                      )}
+                      {deviceInfoExpanded && (
+                        <View
+                          style={[
+                            styles.deviceInfoPanelRounded,
+                            deviceInfoExpanded && styles.deviceInfoSmallActive,
+                          ]}
+                        >
+                          <View style={styles.deviceInfoLine}>
+                            <Text style={styles.deviceInfoLabel}>Device name</Text>
+                            <Text
+                              style={styles.deviceInfoValue}
+                              selectable
+                              testID="central-device-info-device-name"
+                            >
+                              {deviceTitle || '(no name)'}
+                            </Text>
+                          </View>
+                          <View style={styles.deviceInfoLine}>
+                            <Text style={styles.deviceInfoLabel}>Device UUID</Text>
+                            <Text
+                              style={[styles.deviceInfoValue, styles.mono]}
+                              selectable
+                              testID="central-device-info-uuid"
+                            >
+                              {d.id}
+                            </Text>
+                          </View>
+                          {deviceInfoLoading ? (
+                            <ActivityIndicator color="#8ab4d8" />
+                          ) : deviceInfoRows && deviceInfoRows.length > 0 ? (
+                            deviceInfoRows.map((row) => (
+                              <View key={row.label} style={styles.deviceInfoLine}>
+                                <Text style={styles.deviceInfoLabel}>{row.label}</Text>
+                                <Text style={styles.deviceInfoValue} selectable>
+                                  {row.value}
+                                </Text>
+                              </View>
+                            ))
+                          ) : (
+                            <Text style={styles.deviceInfoEmpty}>
+                              No device information could be read (DIS may be absent).
+                            </Text>
+                          )}
+                        </View>
                       )}
                     </>
                   ) : (
                     <View style={styles.deviceCardHeader}>
                       <View style={styles.deviceHeaderLeft}>
-                        <Text style={styles.deviceName}>{deviceTitle || '(no name)'}</Text>
-                        <Text style={styles.deviceId}>{d.id}</Text>
+                        <Text style={styles.deviceTargetTitle}>{targetLabel}</Text>
                       </View>
                       {connected ? (
                         <Text style={styles.deviceHeaderHint} numberOfLines={2}>
                           Disconnect other device first
                         </Text>
+                      ) : showRowBusy ? (
+                        <ActivityIndicator
+                          size="small"
+                          color="#8ab4d8"
+                          style={styles.deviceBusySpinner}
+                        />
                       ) : (
                         <TouchableOpacity
                           testID={`central-connect-${d.id}`}
@@ -841,8 +896,6 @@ export default function CentralApp() {
               );
             })
           )}
-
-          {busy && <ActivityIndicator color="#8ab4d8" style={{ marginTop: 12 }} />}
         </ScrollView>
       </View>
 
@@ -1004,9 +1057,13 @@ const styles = StyleSheet.create({
   },
   deviceHeaderActions: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 6,
     flexShrink: 0,
+  },
+  deviceBusySpinner: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
   },
   deviceInfoSmall: {
     paddingVertical: 6,
@@ -1015,7 +1072,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#121820',
     borderWidth: 1,
     borderColor: '#283545',
-    alignSelf: 'flex-start',
   },
   deviceInfoSmallActive: {
     backgroundColor: '#2d3f54',
@@ -1029,13 +1085,16 @@ const styles = StyleSheet.create({
   deviceInfoSmallTextActive: {
     color: '#e8eaed',
   },
-  deviceInfoPanel: {
-    marginTop: 12,
-    paddingTop: 12,
-    paddingHorizontal: 2,
-    paddingBottom: 4,
-    borderTopWidth: 1,
-    borderTopColor: '#2d323c',
+  /** Info content panel: same border / fill treatment as `deviceInfoSmall`. */
+  deviceInfoPanelRounded: {
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#121820',
+    borderWidth: 1,
+    borderColor: '#283545',
+    alignSelf: 'stretch',
   },
   deviceInfoLine: {
     flexDirection: 'row',
@@ -1063,8 +1122,12 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontStyle: 'italic',
   },
-  deviceName: { color: '#e4e7ec', fontSize: 15, fontWeight: '600' },
-  deviceId: { color: '#8b949e', fontSize: 11, marginTop: 2 },
+  /** Same copy as Target profile cards (`DEMO_TARGETS[targetId].label`). */
+  deviceTargetTitle: {
+    color: '#e4e7ec',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   deviceRowConnected: {
     borderColor: '#4a7ab0',
     backgroundColor: '#141a22',
@@ -1095,9 +1158,17 @@ const styles = StyleSheet.create({
   },
   metricRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
     marginTop: 8,
+    gap: 8,
+  },
+  metricRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: 6,
+    flex: 1,
+    minWidth: 0,
   },
   metricBatteryIcon: { fontSize: 18 },
   metricStateOn: { color: '#86efac', fontWeight: '700', fontSize: 16 },
@@ -1106,9 +1177,16 @@ const styles = StyleSheet.create({
   metricStateMuted: { color: '#6b7280', fontSize: 16 },
   ledControlRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
     marginTop: 12,
+    gap: 8,
+  },
+  ledControlRowMain: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    flex: 1,
+    minWidth: 0,
   },
   ledSectionLabel: {
     color: '#9ab6d4',
