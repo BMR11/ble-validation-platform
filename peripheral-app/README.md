@@ -126,7 +126,7 @@ To learn more about React Native, take a look at the following resources:
 
 The native module can forward Android broadcast intents to JavaScript when you register actions with `registerBroadcastReceiver`. This is used for **ADB/automation** to drive the same code paths as the BLE peripheral (see `automation/` for scripts and patterns).
 
-`ProfileApp.tsx` handles commands such as `TRG_START_PERIPHERAL`, `TRG_BUTTON_ON/OFF`, `TRG_BATTERY_PLUS_10`, and `TRG_SHOW_LOGS`.
+`ProfileApp.tsx` handles commands such as `TRG_START_PERIPHERAL`, `TRG_BUTTON_STATE_ON/OFF`, `TRG_BATTERY_PLUS_10`, and `TRG_SHOW_LOGS`.
 
 To try a broadcast via ADB (see `automation/scripts/v2/adb-send-automation-broadcast.sh`):
 

@@ -382,7 +382,7 @@ export default function ProfileApp() {
       }
       const cmd = rawCmd.trim();
 
-      if (cmd === 'TRG_SELECT_LOCAL') {
+      if (cmd === 'TRG_SELECT_LOCAL_PROFILE') {
         setProfileSource('local');
         addLog('info', '[automation] profile source: Local');
         return;
@@ -425,13 +425,13 @@ export default function ProfileApp() {
         return;
       }
 
-      if (cmd === 'TRG_BUTTON_ON') {
+      if (cmd === 'TRG_BUTTON_STATE_ON') {
         handleValueChange(LBS_SERVICE_UUID, LBS_BUTTON_CHAR_UUID, 1);
         addLog('info', '[automation] Button ON');
         return;
       }
 
-      if (cmd === 'TRG_BUTTON_OFF') {
+      if (cmd === 'TRG_BUTTON_STATE_OFF') {
         handleValueChange(LBS_SERVICE_UUID, LBS_BUTTON_CHAR_UUID, 0);
         addLog('info', '[automation] Button OFF');
         return;

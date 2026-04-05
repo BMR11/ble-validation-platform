@@ -244,9 +244,9 @@ Step lines stay plain (what happens on the **peripheral** vs **iPhone**). Full *
 | **Cleanup** | `adb` **force-stop** package | **`close <bundle>`** (stop **Central App**) + **close** sessions (best-effort). All close calls run **in parallel**. |
 | **Bootstrap** | **`scripts/adb-peripheral-bootstrap.sh`**: `wait-for-device`, **pm grant** BT perms, **monkey** launch app | — |
 | **Post-launch wait** | Sleep **`V2_POST_BOOTSTRAP_MS`** (default **1500** ms) so RN can **`registerBroadcastReceiver`** before intents arrive | — |
-| **Broadcasts 1–4** | **`am broadcast`**: `TRG_SELECT_LOCAL` → `TRG_SELECT_PROFILE` (`profileId=nordic-lbs`) → `TRG_START_PERIPHERAL` (`profileId=nordic-lbs`) → `TRG_SHOW_LOGS`. Gap between commands: **`V2_BROADCAST_GAP_MS`** (default **200** ms). | — |
+| **Broadcasts 1–4** | **`am broadcast`**: `TRG_SELECT_LOCAL_PROFILE` → `TRG_SELECT_PROFILE` (`profileId=nordic-lbs`) → `TRG_START_PERIPHERAL` (`profileId=nordic-lbs`) → `TRG_SHOW_LOGS`. Gap between commands: **`V2_BROADCAST_GAP_MS`** (default **200** ms). | — |
 | **Central UI** | — | **`agent-device open`** `CENTRAL_APP_NAME`, then **five** replay segments **`v2-ios-00` … `v2-ios-04`**: Show logs → Nordic + Scan + wait → Connect + wait → LED ON → LED OFF (one 🔵 line per segment). Monolithic **`v2-nordic-connect-led.ad`** kept for manual full replay. |
-| **Broadcasts 5–6** | `TRG_BUTTON_ON` → `TRG_BUTTON_OFF` | — |
+| **Broadcasts 5–6** | `TRG_BUTTON_STATE_ON` → `TRG_BUTTON_STATE_OFF` | — |
 | **Broadcasts 7–11** | `TRG_BATTERY_PLUS_10` ×3 → `TRG_BATTERY_MINUS_10` ×2 (1 s gap between each). Default battery 50 → 60 → 70 → 80 → 70 → 60. | — |
 | **Teardown** | **force-stop** + session close | **`close <bundle>`** (stop central app) + session **close** |
 
@@ -259,14 +259,14 @@ iOS is **not** opened before Android: the first `open` for central runs when the
 From the repo root:
 
 ```bash
-bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_SELECT_LOCAL
+bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_SELECT_LOCAL_PROFILE
 bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_START_PERIPHERAL -- --es profileId nordic-lbs
 bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_SHOW_LOGS
 bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_BATTERY_PLUS_10
 bash automation/scripts/v2/adb-send-automation-broadcast.sh TRG_BATTERY_MINUS_10
 ```
 
-Available commands: `TRG_SELECT_LOCAL`, `TRG_SELECT_PROFILE` (needs `--es profileId <id>`), `TRG_START_PERIPHERAL` (needs `--es profileId <id>`), `TRG_BUTTON_ON`, `TRG_BUTTON_OFF`, `TRG_SHOW_LOGS`, `TRG_BATTERY_PLUS_10`, `TRG_BATTERY_MINUS_10`.
+Available commands: `TRG_SELECT_LOCAL_PROFILE`, `TRG_SELECT_PROFILE` (needs `--es profileId <id>`), `TRG_START_PERIPHERAL` (needs `--es profileId <id>`), `TRG_BUTTON_STATE_ON`, `TRG_BUTTON_STATE_OFF`, `TRG_SHOW_LOGS`, `TRG_BATTERY_PLUS_10`, `TRG_BATTERY_MINUS_10`.
 
 The peripheral app should be **foreground**; check in-app logs / **logcat** for **`[automation]`** lines when a command is handled.
 

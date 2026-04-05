@@ -6,7 +6,7 @@
 #   adb-send-automation-broadcast.sh TRG_COMMAND [-- extra adb args...]
 #
 # Examples:
-#   adb-send-automation-broadcast.sh TRG_SELECT_LOCAL
+#   adb-send-automation-broadcast.sh TRG_SELECT_LOCAL_PROFILE
 #   adb-send-automation-broadcast.sh TRG_SELECT_PROFILE -- --es profileId nordic-lbs
 #   adb-send-automation-broadcast.sh TRG_START_PERIPHERAL -- --es profileId nordic-lbs
 #
