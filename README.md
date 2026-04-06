@@ -10,6 +10,12 @@ A **profile-driven Bluetooth Low Energy (BLE) device emulator** with a **periphe
 - inject failure scenarios
 - validate central app behavior end-to-end
 
+### Turning simulation into validation
+
+When behavior is defined and controlled through **profiles**, simulation becomes a **validation** tool: you can drive the peripheral on purpose, trigger scenarios, and check that the central (or your product app) behaves as expected.
+
+**Validation loop** (diagram — open in [Excalidraw](https://excalidraw.com) or your editor): [`docs/diagrams/validation-loop.excalidraw`](docs/diagrams/validation-loop.excalidraw) — *scenario → profile behavior → central interaction → verification* (then refine and repeat).
+
 ## Overview
 
 This repository provides a **reference implementation of a profile-driven BLE validation platform**.
