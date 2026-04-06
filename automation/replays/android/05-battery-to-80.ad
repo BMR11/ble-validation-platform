@@ -1,0 +1,17 @@
+context platform=android
+open "Peripheral App"
+wait 2000
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+click "label=\"Peripheral battery plus ten\""
+wait 500
+click "label=\"Peripheral battery plus ten\""
+wait 500
+click "label=\"Peripheral battery plus ten\""
+wait 2500

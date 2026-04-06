@@ -1,5 +1,5 @@
 {
-  "name": "ble-device-emulator-peripheral",
+  "name": "ble-validation-platform-peripheral",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -14,7 +14,7 @@
   "dependencies": {
     "react": "19.0.0",
     "react-native": "0.79.2",
-    "react-native-ble-peripheral-manager": "file:../../react-native-ble-peripheral-manager"
+    "rn-ble-peripheral-module": "file:../local_modules/rn-ble-peripheral-module"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -27,6 +27,7 @@
     "@react-native/metro-config": "0.79.2",
     "@react-native/typescript-config": "0.79.2",
     "@types/react": "^19.0.0",
+    "react-native-dotenv": "^3.4.11",
     "typescript": "^5.8.3"
   },
   "engines": {

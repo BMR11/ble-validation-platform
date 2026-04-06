@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shrinks foreground inside the 108dp adaptive canvas so artwork stays off the circular mask edge. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@mipmap/ic_launcher_foreground"
+    android:insetLeft="20dp"
+    android:insetTop="20dp"
+    android:insetRight="20dp"
+    android:insetBottom="20dp" />

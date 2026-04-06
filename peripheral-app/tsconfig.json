@@ -6,5 +6,5 @@
     "types": ["react-native"],
     "lib": ["ES2022", "DOM"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "index.js"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "index.js", "env.d.ts"]
 }

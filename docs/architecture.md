@@ -6,18 +6,20 @@ This repository implements a **two-app BLE demo**:
 
 | App | Role | Library | Typical device |
 |-----|------|---------|----------------|
-| `peripheral-app/` | GATT server + advertiser | `react-native-ble-peripheral-manager` | **Android** (peripheral mode) |
+| `peripheral-app/` | GATT server + advertiser | `rn-ble-peripheral-module` | **Android** (peripheral mode) |
 | `central-app/` | Scanner + GATT client | `react-native-ble-manager` | **iOS or Android** |
 
-Behavior of the peripheral is driven by **JSON profiles** in `profiles/`. TypeScript maps optional `valueGenerator` keys to concrete simulation blocks before the shared **profile engine** runs (migrated from `react-native-ble-peripheral-manager` example branch `test-pripheral-config-profile-mar23`).
+Behavior of the peripheral is driven by **JSON profiles**: bundled under [`profiles/local/`](../profiles/local/) and/or **fetched at runtime** from the [**remote-profile**](../remote-profile/) service (see [remote-profiles.md](./remote-profiles.md)). TypeScript maps optional `valueGenerator` keys to concrete simulation blocks before the shared **profile engine** runs (migrated from `rn-ble-peripheral-module` example branch `test-pripheral-config-profile-mar23`).
 
 ```mermaid
 flowchart LR
   subgraph repo
-    JSON[profiles/*.json]
+    JSON[profiles/local/*.json]
+    REM[remote-profile API]
     VG[valueGenerator registry TS]
     PE[ProfileEngine]
     JSON --> VG
+    REM --> VG
     VG --> PE
     PE --> NATIVE[BLE stack]
   end
@@ -34,8 +36,14 @@ flowchart LR
 ## Central stack
 
 1. **`BleManager.start`** — initialize the native central manager.
-2. **`scan`** — filter by primary service UUID aligned with the selected demo target (`src/centralTargets.ts`).
-3. **`connect` → `retrieveServices` → `startNotification` / `write`** — interact with heart rate + battery or Nordic LBS characteristics.
+2. **`scan`** — for standard 16-bit services (Heart Rate), the OS service UUID filter narrows results. For 128-bit UUIDs (Nordic LBS), a **broad scan** runs instead and `matchesTarget()` in JS filters by advertised service UUID or name hints (e.g. `my_lbs`). Scan is stopped on connect; the UI blocks another scan or target change until disconnect.
+3. **`connect` → `retrieveServices`** — discover the GATT layout.
+4. **DIS reads** (`src/disRead.ts`) — optional reads of standard Device Information characteristics (0x180A) for the **Info** panel when the peripheral exposes them.
+5. **`startNotification` / `write`** — heart rate + battery notifications, or Nordic LBS button notifications and LED writes (**LED ON** before **LED OFF** in the demo UI).
+
+## Peripheral automation (Android)
+
+The peripheral app supports **ADB broadcast intents** for automation. When `registerBroadcastReceiver` is called, the native module forwards intents matching configured actions to JavaScript. The `ProfileApp` handles commands such as `TRG_START_PERIPHERAL`, `TRG_BUTTON_STATE_ON`, `TRG_BATTERY_PLUS_10`, and `TRG_SHOW_LOGS` — see `automation/` and `peripheral-app/src/ProfileApp.tsx` for details.
 
 ## Design choices
 

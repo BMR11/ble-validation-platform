@@ -1,0 +1,144 @@
+{
+  "id": "nordic-lbs",
+  "name": "⚡ Nordic LED Button Service",
+  "version": "1.0",
+  "description": "Nordic LBS demo: button notifies central, LED writable by central",
+  "advertising": {
+    "localName": "My_LBS",
+    "deviceName": "My_LBS"
+  },
+  "deviceInfo": {
+    "manufacturerName": "Mfg-local",
+    "modelNumber": "M-V0-LBS",
+    "serialNumber": "SN-1-LBS",
+    "hardwareRevision": "1.0.0",
+    "firmwareRevision": "2.1.0",
+    "softwareRevision": "1.0.0"
+  },
+  "stateMachine": {
+    "initial": "idle",
+    "states": {
+      "idle": {
+        "name": "Idle",
+        "description": "Waiting for central connection",
+        "transitions": [
+          {
+            "to": "active",
+            "trigger": { "type": "onSubscribe" },
+            "label": "Central subscribed"
+          },
+          {
+            "to": "active",
+            "trigger": { "type": "manual" },
+            "label": "Activate"
+          }
+        ]
+      },
+      "active": {
+        "name": "Active",
+        "description": "Button and LED are operational",
+        "transitions": [
+          {
+            "to": "idle",
+            "trigger": { "type": "onUnsubscribe" },
+            "label": "Central unsubscribed"
+          },
+          {
+            "to": "error",
+            "trigger": { "type": "manual" },
+            "label": "Simulate Error"
+          }
+        ]
+      },
+      "error": {
+        "name": "Error",
+        "description": "Device error -- LED writes rejected",
+        "transitions": [
+          {
+            "to": "active",
+            "trigger": { "type": "manual" },
+            "label": "Clear Error"
+          },
+          {
+            "to": "idle",
+            "trigger": { "type": "timer", "delayMs": 5000 },
+            "label": "Auto-reset after 5s"
+          }
+        ]
+      }
+    }
+  },
+  "services": [
+    {
+      "uuid": "00001523-1212-EFDE-1523-785FEABCD123",
+      "name": "LED Button Service",
+      "primary": true,
+      "characteristics": [
+        {
+          "uuid": "00001524-1212-EFDE-1523-785FEABCD123",
+          "name": "Button State",
+          "properties": ["read", "notify"],
+          "permissions": ["readable"],
+          "value": { "type": "uint8", "initial": 0 },
+          "stateOverrides": {
+            "error": {
+              "value": { "type": "uint8", "initial": 255 }
+            }
+          },
+          "ui": {
+            "label": "Button",
+            "control": "toggle"
+          }
+        },
+        {
+          "uuid": "00001525-1212-EFDE-1523-785FEABCD123",
+          "name": "LED State",
+          "properties": ["write", "writeWithoutResponse"],
+          "permissions": ["writeable"],
+          "value": { "type": "uint8", "initial": 0 },
+          "onWrite": {
+            "action": "updateState",
+            "stateKey": "ledState",
+            "decode": "boolean"
+          },
+          "stateOverrides": {
+            "idle": {
+              "writeBehavior": "log"
+            },
+            "error": {
+              "writeBehavior": "reject",
+              "rejectError": "WriteNotPermitted"
+            }
+          },
+          "ui": {
+            "label": "LED",
+            "control": "readonly"
+          }
+        }
+      ]
+    },
+    {
+      "uuid": "0000180F-0000-1000-8000-00805F9B34FB",
+      "name": "Battery",
+      "primary": true,
+      "characteristics": [
+        {
+          "uuid": "00002A19-0000-1000-8000-00805F9B34FB",
+          "name": "Battery Level",
+          "properties": ["read", "notify"],
+          "permissions": ["readable"],
+          "value": { "type": "uint8", "initial": 50 },
+          "valueGenerator": "batteryDecrement",
+          "ui": {
+            "label": "Battery",
+            "unit": "%",
+            "control": "slider",
+            "min": 0,
+            "max": 100,
+            "step": 10
+          }
+        }
+      ]
+    }
+  ]
+}

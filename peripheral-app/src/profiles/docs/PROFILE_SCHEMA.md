@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-A **profile** is a single JSON file that fully describes a BLE peripheral device to emulate. The [ProfileEngine](../profileEngine.ts) reads any valid profile JSON and translates it into `react-native-ble-peripheral-manager` API calls -- no profile-specific code required.
+A **profile** is a single JSON file that fully describes a BLE peripheral device to emulate. The [ProfileEngine](../profileEngine.ts) reads any valid profile JSON and translates it into `rn-ble-peripheral-module` API calls -- no profile-specific code required.
 
 ```mermaid
 flowchart LR
@@ -77,10 +77,10 @@ If present, the engine auto-creates a Device Information Service (UUID `180A`) w
 | ------------------ | ------------- | ----------- |
 | `manufacturerName` | `2A29`        | `"Unknown"` |
 | `modelNumber`      | `2A24`        | `"Unknown"` |
-| `serialNumber`     | `2A25`        | `"000000"`  |
-| `hardwareRevision` | `2A27`        | `"1.0"`     |
-| `firmwareRevision` | `2A26`        | `"1.0"`     |
-| `softwareRevision` | `2A28`        | `"1.0"`     |
+| `serialNumber`     | `2A25`        | `"Unknown"` |
+| `hardwareRevision` | `2A27`        | `"Unknown"` |
+| `firmwareRevision` | `2A26`        | `"Unknown"` |
+| `softwareRevision` | `2A28`        | `"Unknown"` |
 
 Each field becomes a characteristic with `properties: ["read"]`, `permissions: ["readable"]`.
 

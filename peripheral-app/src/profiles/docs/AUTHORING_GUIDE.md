@@ -28,7 +28,7 @@ Start by answering these questions:
 
 ## Step 2: Create the JSON Skeleton
 
-Create a file in `example/src/profiles/data/` (e.g. `my-device.json`):
+Create a file in `profiles/local/` (e.g. `my-device.json`):
 
 ```json
 {
@@ -255,15 +255,15 @@ For writable characteristics:
 
 ## Step 9: Register the Profile
 
-Add your JSON to `profileRegistry.ts`:
+Add your JSON import to `profileRegistry.ts` and wrap it with `applyValueGenerators`:
 
 ```typescript
-import myDevice from './data/my-device.json';
+import myDevice from '../../../profiles/local/my-device.json';
 
 export const BUNDLED_PROFILES: BleProfile[] = [
-  heartRate as unknown as BleProfile,
-  lbs as unknown as BleProfile,
-  myDevice as unknown as BleProfile,  // Add here
+  applyValueGenerators(heartRate),
+  applyValueGenerators(nordicLbs),
+  applyValueGenerators(myDevice),  // Add here
 ];
 ```
 
@@ -271,9 +271,9 @@ export const BUNDLED_PROFILES: BleProfile[] = [
 
 ## Step 10: Test It
 
-1. Run the example app
-2. Select "Profile Mode"
-3. Pick your profile from the list
+1. Run `peripheral-app`
+2. Choose **Profile source → Local**
+3. Pick your profile from the list and tap **Start peripheral**
 4. Use nRF Connect on another device to inspect the GATT table
 5. Verify services, characteristics, UUIDs, and properties match your design
 

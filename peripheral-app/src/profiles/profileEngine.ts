@@ -2,7 +2,7 @@
  * Profile Engine
  *
  * The core orchestrator that reads ANY profile JSON and translates it into
- * react-native-ble-peripheral-manager API calls. Contains ZERO profile-
+ * rn-ble-peripheral-module API calls. Contains ZERO profile-
  * specific logic -- all behavior is driven by the profile schema.
  *
  * Responsibilities:
@@ -32,7 +32,7 @@ import {
   onDidReceiveWriteRequests,
   ATTError,
   base64StringToDecimal,
-} from 'react-native-ble-peripheral-manager';
+} from 'rn-ble-peripheral-module';
 
 import type {
   BleProfile,
@@ -110,9 +110,10 @@ export class ProfileEngine {
         profile.advertising.serviceUUIDs?.slice() ||
         this.deriveServiceUUIDs(profile);
 
+      // Only advertise the first (primary) service UUID; including all (battery + DIS) causes a data-length error
       await startAdvertising({
         localName: profile.advertising.localName,
-        serviceUUIDs,
+        serviceUUIDs: [serviceUUIDs[0]],
       });
 
       this.registerEventHandlers();

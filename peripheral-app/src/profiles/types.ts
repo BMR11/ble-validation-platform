@@ -14,7 +14,7 @@ import {
   CharacteristicProperties,
   CharacteristicPermissions,
   ATTError,
-} from 'react-native-ble-peripheral-manager';
+} from 'rn-ble-peripheral-module';
 
 // ─── Top-Level Profile ───────────────────────────────────────────────────────
 
@@ -49,17 +49,17 @@ export interface ProfileDeviceInfo {
   readonly softwareRevision?: string;
 }
 
-/** Maps ProfileDeviceInfo field names to their DIS characteristic UUIDs. */
+/** Maps ProfileDeviceInfo field names to their DIS characteristic UUIDs (full 128-bit; required by Android UUID.fromString). */
 export const DIS_FIELD_MAP: Record<keyof ProfileDeviceInfo, string> = {
-  manufacturerName: '2A29',
-  modelNumber: '2A24',
-  serialNumber: '2A25',
-  hardwareRevision: '2A27',
-  firmwareRevision: '2A26',
-  softwareRevision: '2A28',
+  manufacturerName: '00002a29-0000-1000-8000-00805f9b34fb',
+  modelNumber: '00002a24-0000-1000-8000-00805f9b34fb',
+  serialNumber: '00002a25-0000-1000-8000-00805f9b34fb',
+  hardwareRevision: '00002a27-0000-1000-8000-00805f9b34fb',
+  firmwareRevision: '00002a26-0000-1000-8000-00805f9b34fb',
+  softwareRevision: '00002a28-0000-1000-8000-00805f9b34fb',
 };
 
-export const DIS_SERVICE_UUID = '180A';
+export const DIS_SERVICE_UUID = '0000180a-0000-1000-8000-00805f9b34fb';
 
 // ─── GATT Service ────────────────────────────────────────────────────────────
 

@@ -15,11 +15,16 @@ ios/Pods/
 **/Pods/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+**/xcuserdata/
 
 # Metro / bundler
 .expo/
 dist/
 build/
+*.tsbuildinfo
+remote-profile/server/dist/
+remote-profile/client/dist/
+remote-profile/server/data/store.json
 
 # Logs and temp
 *.log
@@ -28,9 +33,11 @@ build/
 npm-debug.log*
 yarn-error.log*
 
-# Environment
+# Environment (keep *.example tracked)
 .env
 .env.*
+!.env.example
+!**/.env.example
 **/.xcode.env.local
 
 # Secrets

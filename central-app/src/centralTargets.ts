@@ -1,11 +1,12 @@
 /**
- * Scan/connect targets aligned with `profiles/*.json` in the repo root.
+ * Scan/connect targets aligned with `profiles/local/*.json` in the repo root.
  */
 
-import { toFullUuid16 } from './uuid';
+import { Platform } from 'react-native';
+import { toFullUuid16, toShortUuid4 } from './uuid';
 
 export type DemoTargetId = 'heart-rate-monitor' | 'nordic-lbs';
-
+const isiOS = Platform.OS === 'ios';
 export interface DemoTarget {
   readonly id: DemoTargetId;
   readonly label: string;
@@ -23,8 +24,9 @@ export interface DemoTarget {
 export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
   'heart-rate-monitor': {
     id: 'heart-rate-monitor',
-    label: 'Heart Rate Monitor',
-    nameHints: ['rn_ble_hr_demo', 'my_hr'],
+    /** 💓 — keep in sync with `profiles/local/heart-rate.json` `name`. */
+    label: '💓 Heart Rate Monitor',
+    nameHints: ['rn_ble_hr_demo'],
     scanServiceUuid: toFullUuid16('180D'),
     services: {
       heartRate: {
@@ -32,14 +34,15 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         measurement: toFullUuid16('2A37'),
       },
       battery: {
-        service: toFullUuid16('180F'),
-        level: toFullUuid16('2A19'),
+        service: isiOS ? '180F' : toFullUuid16('180F'), // iOS needs short format; Android needs full 128-bit
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),   // iOS needs short format; Android needs full 128-bit
       },
     },
   },
   'nordic-lbs': {
     id: 'nordic-lbs',
-    label: 'Nordic LBS',
+    /** ⚡ — keep in sync with `profiles/local/nordic-lbs.json` `name`. */
+    label: '⚡ Nordic LED Button Service',
     nameHints: ['my_lbs'],
     scanServiceUuid: '00001523-1212-efde-1523-785feabcd123',
     services: {
@@ -49,8 +52,8 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         led: '00001525-1212-efde-1523-785feabcd123',
       },
       battery: {
-        service: toFullUuid16('180F'),
-        level: toFullUuid16('2A19'),
+        service: isiOS ? '180F' : toFullUuid16('180F'), // iOS needs short format; Android needs full 128-bit
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),   // iOS needs short format; Android needs full 128-bit
       },
     },
   },

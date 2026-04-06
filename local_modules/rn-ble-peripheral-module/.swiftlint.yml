@@ -1,0 +1,20 @@
+# SwiftLint Configuration File
+# This is the default configuration. You can customize rules as needed.
+
+# Uncomment to enable/disable rules
+disabled_rules:
+  - colon
+  - comma
+  - control_statement
+
+# Opt-in rules (uncomment to enable)
+opt_in_rules:
+  - empty_count
+  - missing_docs
+
+# Excluded paths (uncomment to exclude files/folders)
+excluded:
+  - Carthage
+  - Pods
+  - fastlane
+  - scripts

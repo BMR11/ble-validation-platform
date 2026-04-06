@@ -1,0 +1,5 @@
+context platform=ios
+open org.reactjs.native.example.BleCentralDemo
+wait 1500
+click "id=central-led-off"
+wait 3500

@@ -1,0 +1,1024 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "email": "demo@example.com",
+      "password": "demo123"
+    }
+  ],
+  "profiles": [
+    {
+      "profileId": "heart-rate-monitor",
+      "name": "💓 Heart Rate Monitor",
+      "category": "medical",
+      "notes": "Seeded from profiles/local; v2 adds vendor extension service.",
+      "versions": [
+        {
+          "version": "1",
+          "status": "published",
+          "updatedAt": "2026-03-28T10:52:41.088Z",
+          "changelog": "Initial published profile (matches local JSON).",
+          "document": {
+            "id": "heart-rate-monitor",
+            "name": "💓 Heart Rate Monitor",
+            "version": "1.0",
+            "description": "Emulates a BLE heart rate monitor with battery and device info",
+            "advertising": {
+              "localName": "RN_BLE_HR_Demo",
+              "deviceName": "My_HR"
+            },
+            "deviceInfo": {
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-HR",
+              "serialNumber": "SN-1-HR",
+              "hardwareRevision": "1.0.0",
+              "firmwareRevision": "2.1.0",
+              "softwareRevision": "1.0.0"
+            },
+            "stateMachine": {
+              "initial": "idle",
+              "states": {
+                "idle": {
+                  "name": "Idle",
+                  "description": "Waiting for central to subscribe",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "onSubscribe",
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+                      },
+                      "label": "Central subscribed to HR"
+                    },
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Start Monitoring"
+                    }
+                  ]
+                },
+                "active": {
+                  "name": "Active",
+                  "description": "Actively monitoring heart rate",
+                  "transitions": [
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "onUnsubscribe",
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+                      },
+                      "label": "Central unsubscribed"
+                    },
+                    {
+                      "to": "error",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Simulate Error"
+                    }
+                  ]
+                },
+                "error": {
+                  "name": "Error",
+                  "description": "Sensor error -- sends zero readings",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Clear Error"
+                    },
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "timer",
+                        "delayMs": 10000
+                      },
+                      "label": "Auto-reset after 10s"
+                    }
+                  ]
+                }
+              }
+            },
+            "services": [
+              {
+                "uuid": "0000180d-0000-1000-8000-00805f9b34fb",
+                "name": "Heart Rate",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00002a37-0000-1000-8000-00805f9b34fb",
+                    "name": "Heart Rate Measurement",
+                    "properties": [
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8Array",
+                      "initial": [
+                        0,
+                        0
+                      ]
+                    },
+                    "valueGenerator": "heartRateMeasurement",
+                    "ui": {
+                      "label": "Heart Rate",
+                      "unit": "BPM",
+                      "control": "stepper",
+                      "min": 40,
+                      "max": 200,
+                      "step": 1
+                    }
+                  },
+                  {
+                    "uuid": "00002a38-0000-1000-8000-00805f9b34fb",
+                    "name": "Body Sensor Location",
+                    "properties": [
+                      "read"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 1
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "readBehavior": "reject",
+                        "rejectError": "UnlikelyError"
+                      }
+                    }
+                  },
+                  {
+                    "uuid": "00002a39-0000-1000-8000-00805f9b34fb",
+                    "name": "Heart Rate Control Point",
+                    "properties": [
+                      "write"
+                    ],
+                    "permissions": [
+                      "writeable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 0
+                    },
+                    "onWrite": {
+                      "action": "log",
+                      "decode": "uint8"
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "writeBehavior": "reject",
+                        "rejectError": "UnlikelyError"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
+                "name": "Battery",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
+                    "name": "Battery Level",
+                    "properties": [
+                      "read",
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 100
+                    },
+                    "valueGenerator": "batteryDecrement",
+                    "ui": {
+                      "label": "Battery",
+                      "unit": "%",
+                      "control": "slider",
+                      "min": 0,
+                      "max": 100,
+                      "step": 10
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "version": "2",
+          "status": "published",
+          "updatedAt": "2026-03-28T10:52:41.088Z",
+          "changelog": "Added vendor extension service with read-only build tag.",
+          "document": {
+            "id": "heart-rate-monitor",
+            "name": "💓 Heart Rate Monitor",
+            "version": "2.0",
+            "description": "Heart rate + battery + optional vendor extension GATT service (remote profile v2 story).",
+            "advertising": {
+              "localName": "RN_BLE_HR_Demo",
+              "deviceName": "My_HR"
+            },
+            "deviceInfo": {
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-HR",
+              "serialNumber": "SN-1-HR",
+              "hardwareRevision": "1.0.0",
+              "firmwareRevision": "2.1.0",
+              "softwareRevision": "1.0.0"
+            },
+            "stateMachine": {
+              "initial": "idle",
+              "states": {
+                "idle": {
+                  "name": "Idle",
+                  "description": "Waiting for central to subscribe",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "onSubscribe",
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+                      },
+                      "label": "Central subscribed to HR"
+                    },
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Start Monitoring"
+                    }
+                  ]
+                },
+                "active": {
+                  "name": "Active",
+                  "description": "Actively monitoring heart rate",
+                  "transitions": [
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "onUnsubscribe",
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+                      },
+                      "label": "Central unsubscribed"
+                    },
+                    {
+                      "to": "error",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Simulate Error"
+                    }
+                  ]
+                },
+                "error": {
+                  "name": "Error",
+                  "description": "Sensor error -- sends zero readings",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Clear Error"
+                    },
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "timer",
+                        "delayMs": 10000
+                      },
+                      "label": "Auto-reset after 10s"
+                    }
+                  ]
+                }
+              }
+            },
+            "services": [
+              {
+                "uuid": "0000180d-0000-1000-8000-00805f9b34fb",
+                "name": "Heart Rate",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00002a37-0000-1000-8000-00805f9b34fb",
+                    "name": "Heart Rate Measurement",
+                    "properties": [
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8Array",
+                      "initial": [
+                        0,
+                        0
+                      ]
+                    },
+                    "valueGenerator": "heartRateMeasurement",
+                    "ui": {
+                      "label": "Heart Rate",
+                      "unit": "BPM",
+                      "control": "stepper",
+                      "min": 40,
+                      "max": 200,
+                      "step": 1
+                    }
+                  },
+                  {
+                    "uuid": "00002a38-0000-1000-8000-00805f9b34fb",
+                    "name": "Body Sensor Location",
+                    "properties": [
+                      "read"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 1
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "readBehavior": "reject",
+                        "rejectError": "UnlikelyError"
+                      }
+                    }
+                  },
+                  {
+                    "uuid": "00002a39-0000-1000-8000-00805f9b34fb",
+                    "name": "Heart Rate Control Point",
+                    "properties": [
+                      "write"
+                    ],
+                    "permissions": [
+                      "writeable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 0
+                    },
+                    "onWrite": {
+                      "action": "log",
+                      "decode": "uint8"
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "writeBehavior": "reject",
+                        "rejectError": "UnlikelyError"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
+                "name": "Battery",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
+                    "name": "Battery Level",
+                    "properties": [
+                      "read",
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 100
+                    },
+                    "valueGenerator": "batteryDecrement",
+                    "ui": {
+                      "label": "Battery",
+                      "unit": "%",
+                      "control": "slider",
+                      "min": 0,
+                      "max": 100,
+                      "step": 10
+                    }
+                  }
+                ]
+              },
+              {
+                "uuid": "0000fff0-0000-1000-8000-00805f9b34fb",
+                "name": "Vendor Extension",
+                "primary": false,
+                "characteristics": [
+                  {
+                    "uuid": "0000fff1-0000-1000-8000-00805f9b34fb",
+                    "name": "Build Tag",
+                    "properties": [
+                      "read"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "string",
+                      "initial": "HR-v2-remote"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "version": "3",
+          "status": "draft",
+          "updatedAt": "2026-03-28T10:52:41.088Z",
+          "changelog": "Draft for future firmware alignment (demo only).",
+          "document": {
+            "id": "heart-rate-monitor",
+            "name": "💓 Heart Rate Monitor",
+            "version": "3.0-draft",
+            "description": "Work in progress — not published to peripherals.",
+            "advertising": {
+              "localName": "RN_BLE_HR_Demo",
+              "deviceName": "My_HR"
+            },
+            "deviceInfo": {
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-HR",
+              "serialNumber": "SN-1-HR",
+              "hardwareRevision": "1.0.0",
+              "firmwareRevision": "2.1.0",
+              "softwareRevision": "1.0.0"
+            },
+            "stateMachine": {
+              "initial": "idle",
+              "states": {
+                "idle": {
+                  "name": "Idle",
+                  "description": "Waiting for central to subscribe",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "onSubscribe",
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+                      },
+                      "label": "Central subscribed to HR"
+                    },
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Start Monitoring"
+                    }
+                  ]
+                },
+                "active": {
+                  "name": "Active",
+                  "description": "Actively monitoring heart rate",
+                  "transitions": [
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "onUnsubscribe",
+                        "characteristicUUID": "00002a37-0000-1000-8000-00805f9b34fb"
+                      },
+                      "label": "Central unsubscribed"
+                    },
+                    {
+                      "to": "error",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Simulate Error"
+                    }
+                  ]
+                },
+                "error": {
+                  "name": "Error",
+                  "description": "Sensor error -- sends zero readings",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Clear Error"
+                    },
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "timer",
+                        "delayMs": 10000
+                      },
+                      "label": "Auto-reset after 10s"
+                    }
+                  ]
+                }
+              }
+            },
+            "services": [
+              {
+                "uuid": "0000180d-0000-1000-8000-00805f9b34fb",
+                "name": "Heart Rate",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00002a37-0000-1000-8000-00805f9b34fb",
+                    "name": "Heart Rate Measurement",
+                    "properties": [
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8Array",
+                      "initial": [
+                        0,
+                        0
+                      ]
+                    },
+                    "valueGenerator": "heartRateMeasurement",
+                    "ui": {
+                      "label": "Heart Rate",
+                      "unit": "BPM",
+                      "control": "stepper",
+                      "min": 40,
+                      "max": 200,
+                      "step": 1
+                    }
+                  },
+                  {
+                    "uuid": "00002a38-0000-1000-8000-00805f9b34fb",
+                    "name": "Body Sensor Location",
+                    "properties": [
+                      "read"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 1
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "readBehavior": "reject",
+                        "rejectError": "UnlikelyError"
+                      }
+                    }
+                  },
+                  {
+                    "uuid": "00002a39-0000-1000-8000-00805f9b34fb",
+                    "name": "Heart Rate Control Point",
+                    "properties": [
+                      "write"
+                    ],
+                    "permissions": [
+                      "writeable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 0
+                    },
+                    "onWrite": {
+                      "action": "log",
+                      "decode": "uint8"
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "writeBehavior": "reject",
+                        "rejectError": "UnlikelyError"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
+                "name": "Battery",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
+                    "name": "Battery Level",
+                    "properties": [
+                      "read",
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 100
+                    },
+                    "valueGenerator": "batteryDecrement",
+                    "ui": {
+                      "label": "Battery",
+                      "unit": "%",
+                      "control": "slider",
+                      "min": 0,
+                      "max": 100,
+                      "step": 10
+                    }
+                  }
+                ]
+              },
+              {
+                "uuid": "0000fff0-0000-1000-8000-00805f9b34fb",
+                "name": "Vendor Extension",
+                "primary": false,
+                "characteristics": [
+                  {
+                    "uuid": "0000fff1-0000-1000-8000-00805f9b34fb",
+                    "name": "Build Tag",
+                    "properties": [
+                      "read"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "string",
+                      "initial": "HR-v2-remote"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "profileId": "nordic-lbs",
+      "name": "⚡ Nordic LED Button Service",
+      "category": "vendor",
+      "notes": "v1 = LBS only; v2 = adds battery service like local bundle.",
+      "versions": [
+        {
+          "version": "1",
+          "status": "published",
+          "updatedAt": "2026-03-28T10:52:41.088Z",
+          "changelog": "LBS only — no battery GATT service.",
+          "document": {
+            "id": "nordic-lbs",
+            "name": "⚡ Nordic LED Button Service",
+            "version": "1.0",
+            "description": "Nordic LBS: LED + button only (no battery service yet).",
+            "advertising": {
+              "localName": "My_LBS",
+              "deviceName": "My_LBS"
+            },
+            "deviceInfo": {
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-LBS",
+              "serialNumber": "SN-1-LBS",
+              "hardwareRevision": "1.0.0",
+              "firmwareRevision": "2.1.0",
+              "softwareRevision": "1.0.0"
+            },
+            "stateMachine": {
+              "initial": "idle",
+              "states": {
+                "idle": {
+                  "name": "Idle",
+                  "description": "Waiting for central connection",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "onSubscribe"
+                      },
+                      "label": "Central subscribed"
+                    },
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Activate"
+                    }
+                  ]
+                },
+                "active": {
+                  "name": "Active",
+                  "description": "Button and LED are operational",
+                  "transitions": [
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "onUnsubscribe"
+                      },
+                      "label": "Central unsubscribed"
+                    },
+                    {
+                      "to": "error",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Simulate Error"
+                    }
+                  ]
+                },
+                "error": {
+                  "name": "Error",
+                  "description": "Device error -- LED writes rejected",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Clear Error"
+                    },
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "timer",
+                        "delayMs": 5000
+                      },
+                      "label": "Auto-reset after 5s"
+                    }
+                  ]
+                }
+              }
+            },
+            "services": [
+              {
+                "uuid": "00001523-1212-EFDE-1523-785FEABCD123",
+                "name": "LED Button Service",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00001524-1212-EFDE-1523-785FEABCD123",
+                    "name": "Button State",
+                    "properties": [
+                      "read",
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 0
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "value": {
+                          "type": "uint8",
+                          "initial": 255
+                        }
+                      }
+                    },
+                    "ui": {
+                      "label": "Button",
+                      "control": "toggle"
+                    }
+                  },
+                  {
+                    "uuid": "00001525-1212-EFDE-1523-785FEABCD123",
+                    "name": "LED State",
+                    "properties": [
+                      "write",
+                      "writeWithoutResponse"
+                    ],
+                    "permissions": [
+                      "writeable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 0
+                    },
+                    "onWrite": {
+                      "action": "updateState",
+                      "stateKey": "ledState",
+                      "decode": "boolean"
+                    },
+                    "stateOverrides": {
+                      "idle": {
+                        "writeBehavior": "log"
+                      },
+                      "error": {
+                        "writeBehavior": "reject",
+                        "rejectError": "WriteNotPermitted"
+                      }
+                    },
+                    "ui": {
+                      "label": "LED",
+                      "control": "readonly"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "version": "2",
+          "status": "published",
+          "updatedAt": "2026-03-28T10:52:41.088Z",
+          "changelog": "Added standard Battery service (0x180F) with simulated drain.",
+          "document": {
+            "id": "nordic-lbs",
+            "name": "⚡ Nordic LED Button Service",
+            "version": "1.0",
+            "description": "Nordic LBS demo: button notifies central, LED writable by central",
+            "advertising": {
+              "localName": "My_LBS",
+              "deviceName": "My_LBS"
+            },
+            "deviceInfo": {
+              "manufacturerName": "Demo Manufacturer-remote",
+              "modelNumber": "M-V0-LBS",
+              "serialNumber": "SN-1-LBS",
+              "hardwareRevision": "1.0.0",
+              "firmwareRevision": "2.1.0",
+              "softwareRevision": "1.0.0"
+            },
+            "stateMachine": {
+              "initial": "idle",
+              "states": {
+                "idle": {
+                  "name": "Idle",
+                  "description": "Waiting for central connection",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "onSubscribe"
+                      },
+                      "label": "Central subscribed"
+                    },
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Activate"
+                    }
+                  ]
+                },
+                "active": {
+                  "name": "Active",
+                  "description": "Button and LED are operational",
+                  "transitions": [
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "onUnsubscribe"
+                      },
+                      "label": "Central unsubscribed"
+                    },
+                    {
+                      "to": "error",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Simulate Error"
+                    }
+                  ]
+                },
+                "error": {
+                  "name": "Error",
+                  "description": "Device error -- LED writes rejected",
+                  "transitions": [
+                    {
+                      "to": "active",
+                      "trigger": {
+                        "type": "manual"
+                      },
+                      "label": "Clear Error"
+                    },
+                    {
+                      "to": "idle",
+                      "trigger": {
+                        "type": "timer",
+                        "delayMs": 5000
+                      },
+                      "label": "Auto-reset after 5s"
+                    }
+                  ]
+                }
+              }
+            },
+            "services": [
+              {
+                "uuid": "00001523-1212-EFDE-1523-785FEABCD123",
+                "name": "LED Button Service",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00001524-1212-EFDE-1523-785FEABCD123",
+                    "name": "Button State",
+                    "properties": [
+                      "read",
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 0
+                    },
+                    "stateOverrides": {
+                      "error": {
+                        "value": {
+                          "type": "uint8",
+                          "initial": 255
+                        }
+                      }
+                    },
+                    "ui": {
+                      "label": "Button",
+                      "control": "toggle"
+                    }
+                  },
+                  {
+                    "uuid": "00001525-1212-EFDE-1523-785FEABCD123",
+                    "name": "LED State",
+                    "properties": [
+                      "write",
+                      "writeWithoutResponse"
+                    ],
+                    "permissions": [
+                      "writeable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 0
+                    },
+                    "onWrite": {
+                      "action": "updateState",
+                      "stateKey": "ledState",
+                      "decode": "boolean"
+                    },
+                    "stateOverrides": {
+                      "idle": {
+                        "writeBehavior": "log"
+                      },
+                      "error": {
+                        "writeBehavior": "reject",
+                        "rejectError": "WriteNotPermitted"
+                      }
+                    },
+                    "ui": {
+                      "label": "LED",
+                      "control": "readonly"
+                    }
+                  }
+                ]
+              },
+              {
+                "uuid": "0000180f-0000-1000-8000-00805f9b34fb",
+                "name": "Battery",
+                "primary": true,
+                "characteristics": [
+                  {
+                    "uuid": "00002a19-0000-1000-8000-00805f9b34fb",
+                    "name": "Battery Level",
+                    "properties": [
+                      "read",
+                      "notify"
+                    ],
+                    "permissions": [
+                      "readable"
+                    ],
+                    "value": {
+                      "type": "uint8",
+                      "initial": 50
+                    },
+                    "valueGenerator": "batteryDecrement",
+                    "ui": {
+                      "label": "Battery",
+                      "unit": "%",
+                      "control": "slider",
+                      "min": 0,
+                      "max": 100,
+                      "step": 10
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 /**
- * Loads JSON profiles from the repo-level `profiles/` directory and expands
+ * Loads JSON profiles from the repo-level `profiles/local/` directory and expands
  * `valueGenerator` references before the engine runs.
  */
 
 import type { BleProfile } from './types';
 import { applyValueGenerators } from './applyValueGenerators';
-import heartRate from '../../../profiles/heart-rate.json';
-import nordicLbs from '../../../profiles/nordic-lbs.json';
+import heartRate from '../../../profiles/local/heart-rate.json';
+import nordicLbs from '../../../profiles/local/nordic-lbs.json';
 
 export const BUNDLED_PROFILES: BleProfile[] = [
   applyValueGenerators(heartRate),

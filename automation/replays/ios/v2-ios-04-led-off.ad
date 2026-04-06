@@ -1,0 +1,4 @@
+# v2 segment: Central writes LED OFF.
+context platform=ios
+click "id=central-led-off"
+wait 1500

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -13,7 +14,14 @@ import {
 import BleManager, { BleScanMode } from 'react-native-ble-manager';
 import type { Peripheral } from 'react-native-ble-manager';
 import { DEMO_TARGETS, type DemoTargetId } from './centralTargets';
-import { normUuid } from './uuid';
+import { HeartRateGraph } from './components/HeartRateGraph';
+import { readDeviceInformationService } from './disRead';
+import { normUuid, uuidShort16 } from './uuid';
+
+/** Unicode U+1F4A1 — same bulb as peripheral-app ProfileApp. */
+const BULB_EMOJI = '\u{1F4A1}';
+/** Unicode U+1F50B — battery icon before Battery label. */
+const BATTERY_EMOJI = '\u{1F50B}';
 
 type LogType = 'info' | 'event' | 'error' | 'data';
 
@@ -26,23 +34,46 @@ interface LogRow {
 
 let logSeq = 0;
 
-function parseHeartRateBytes(bytes: number[]): string {
+function valueToBytes(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value as number[];
+  }
+  if (value && typeof value === 'object' && 'length' in value) {
+    return Array.from(value as ArrayLike<number>);
+  }
+  return [];
+}
+
+function parseHeartRateBpm(raw: unknown): number | null {
+  const bytes = valueToBytes(raw);
   if (bytes.length < 2) {
-    return `raw [${bytes.join(', ')}]`;
+    return null;
   }
   const flags = bytes[0] ?? 0;
   const eightBit = (flags & 0x01) === 0;
   const bpm = eightBit ? bytes[1]! : bytes[1]! | (bytes[2]! << 8);
-  return `${bpm} BPM`;
+  if (bpm < 30 || bpm > 300) {
+    return null;
+  }
+  return bpm;
 }
 
-/** Nordic LBS button characteristic: 0 = released, 1 = pressed, 255 = error state in profile. */
+function parseHeartRateBytes(raw: unknown): string {
+  const bpm = parseHeartRateBpm(raw);
+  if (bpm != null) {
+    return `${bpm} BPM`;
+  }
+  const bytes = valueToBytes(raw);
+  return `raw [${bytes.join(', ')}]`;
+}
+
+/** Nordic LBS button characteristic: 0 = off, 1 = on, 255 = error state in profile. */
 function formatLbsButtonState(byte: number): string {
   if (byte === 0) {
-    return 'Released';
+    return 'OFF';
   }
   if (byte === 1) {
-    return 'Pressed';
+    return 'ON';
   }
   if (byte === 255) {
     return 'Error';
@@ -77,6 +108,12 @@ async function requestAndroidBle(): Promise<boolean> {
  *        For Nordic LBS we often scan without that filter because 128‑bit service scan filters miss
  *        some peripherals; then we require a name hint or advertised LBS UUID so we do not list
  *        every anonymous BLE device.
+ *
+ * Rejects peripherals that clearly belong to another demo target (name or advertised service UUID),
+ * so e.g. selecting Heart Rate does not list the Nordic LBS demo (`My_LBS`).
+ *
+ * For Nordic LBS, `osServiceFilter` is ignored for nameless peripherals (broad scan); only a
+ * matching advertised service UUID or this target's name hints qualify.
  */
 function matchesTarget(
   p: Peripheral,
@@ -86,36 +123,87 @@ function matchesTarget(
   const t = DEMO_TARGETS[targetId];
   const uuids = p.advertising?.serviceUUIDs;
   const targetUuid = normUuid(t.scanServiceUuid);
+  const targetShort = uuidShort16(t.scanServiceUuid);
+
+  let matchedThisTargetService = false;
   if (Array.isArray(uuids)) {
     for (const u of uuids) {
-      if (normUuid(String(u)) === targetUuid) {
-        return true;
+      const s = String(u);
+      if (normUuid(s) === targetUuid || uuidShort16(s) === targetShort) {
+        matchedThisTargetService = true;
+        break;
+      }
+    }
+    if (!matchedThisTargetService) {
+      for (const otherId of Object.keys(DEMO_TARGETS) as DemoTargetId[]) {
+        if (otherId === targetId) {
+          continue;
+        }
+        const other = DEMO_TARGETS[otherId];
+        const ou = normUuid(other.scanServiceUuid);
+        const os = uuidShort16(other.scanServiceUuid);
+        for (const u of uuids) {
+          const s = String(u);
+          if (normUuid(s) === ou || uuidShort16(s) === os) {
+            return false;
+          }
+        }
       }
     }
   }
+
+  if (matchedThisTargetService) {
+    return true;
+  }
+
   const name = (p.name || p.advertising?.localName || '')
     .trim()
     .toLowerCase();
   if (name) {
-    return t.nameHints.some((h) => name.includes(h));
+    for (const otherId of Object.keys(DEMO_TARGETS) as DemoTargetId[]) {
+      if (otherId === targetId) {
+        continue;
+      }
+      const other = DEMO_TARGETS[otherId];
+      if (
+        other.nameHints.some((h) => h.length > 0 && name.includes(h))
+      ) {
+        return false;
+      }
+    }
+    return t.nameHints.some((h) => h.length > 0 && name.includes(h));
   }
-  return osServiceFilter;
+  // Nordic LBS uses a broad scan (no OS service filter). Never treat "anonymous"
+  // peripherals as pre-filtered — stale ref from a previous HR scan or the initial
+  // ref=true would otherwise list unrelated devices (e.g. RN_BLE_HR_Demo).
+  return osServiceFilter && targetId !== 'nordic-lbs';
 }
 
 export default function CentralApp() {
   const [logs, setLogs] = useState<LogRow[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
   const [bleOk, setBleOk] = useState(false);
-  const [targetId, setTargetId] = useState<DemoTargetId>('heart-rate-monitor');
+  const [targetId, setTargetId] = useState<DemoTargetId>('nordic-lbs');
   const [scanning, setScanning] = useState(false);
   const [devices, setDevices] = useState<Peripheral[]>([]);
   const [connected, setConnected] = useState<Peripheral | null>(null);
   const [busy, setBusy] = useState(false);
-  const [hrLine, setHrLine] = useState<string>('--');
+  /** While connect is in progress (before `connected` is set); cleared when connect flow ends. */
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  /** Numeric BPM for HR graph; null when unknown or disconnected. */
+  const [hrBpm, setHrBpm] = useState<number | null>(null);
   const [batteryLine, setBatteryLine] = useState<string>('--');
   const [buttonLine, setButtonLine] = useState<string>('--');
+  /** Last known LED on peripheral (read on connect + updated after writes). */
+  const [ledLit, setLedLit] = useState(false);
+  const [deviceInfoExpanded, setDeviceInfoExpanded] = useState(false);
+  const [deviceInfoRows, setDeviceInfoRows] = useState<
+    { label: string; value: string }[] | null
+  >(null);
+  const [deviceInfoLoading, setDeviceInfoLoading] = useState(false);
   const deviceMapRef = useRef<Map<string, Peripheral>>(new Map());
   /** Matches `matchesTarget` third arg — set in handleScan before BleManager.scan. */
-  const osServiceScanFilterRef = useRef(true);
+  const osServiceScanFilterRef = useRef(false);
   /** `scan()`'s Promise resolves when the scan *starts* (iOS/Android), not when it ends. */
   const scanFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scanGenerationRef = useRef(0);
@@ -159,6 +247,10 @@ export default function CentralApp() {
   useEffect(() => {
     const sub = BleManager.onDiscoverPeripheral((p) => {
       if (!matchesTarget(p, targetId, osServiceScanFilterRef.current)) {
+        if (deviceMapRef.current.has(p.id)) {
+          deviceMapRef.current.delete(p.id);
+          setDevices(Array.from(deviceMapRef.current.values()));
+        }
         return;
       }
       addLog('data', `Discovered: ${JSON.stringify(p)}`);
@@ -170,25 +262,25 @@ export default function CentralApp() {
 
   useEffect(() => {
     const sub = BleManager.onDidUpdateValueForCharacteristic((e) => {
-      const ch = normUuid(e.characteristic);
+      const chShort = uuidShort16(e.characteristic);
       const hr = DEMO_TARGETS['heart-rate-monitor'].services.heartRate;
       const bat = DEMO_TARGETS['heart-rate-monitor'].services.battery;
       const lbs = DEMO_TARGETS['nordic-lbs'].services.lbs;
 
-      if (hr && normUuid(hr.measurement) === ch) {
+      if (hr && uuidShort16(hr.measurement) === chShort) {
         const line = parseHeartRateBytes(e.value);
-        setHrLine(line);
+        setHrBpm(parseHeartRateBpm(e.value));
         addLog('data', `Notify HR: ${line}`);
         return;
       }
-      if (bat && normUuid(bat.level) === ch) {
-        const v = e.value[0] ?? 0;
+      if (bat && uuidShort16(bat.level) === chShort) {
+        const v = valueToBytes(e.value)[0] ?? 0;
         setBatteryLine(`${v}%`);
         addLog('data', `Notify battery: ${v}%`);
         return;
       }
-      if (lbs && normUuid(lbs.button) === ch) {
-        const v = e.value[0] ?? 0;
+      if (lbs && uuidShort16(lbs.button) === chShort) {
+        const v = valueToBytes(e.value)[0] ?? 0;
         const line = formatLbsButtonState(v);
         setButtonLine(line);
         addLog('data', `Notify button: ${line}`);
@@ -200,10 +292,46 @@ export default function CentralApp() {
   useEffect(() => {
     const sub = BleManager.onDisconnectPeripheral(() => {
       setConnected(null);
+      setLedLit(false);
+      setHrBpm(null);
+      setBatteryLine('--');
+      setButtonLine('--');
+      setDeviceInfoExpanded(false);
+      setDeviceInfoRows(null);
       addLog('event', 'Disconnected');
     });
     return () => sub.remove();
   }, [addLog]);
+
+  useEffect(() => {
+    if (!deviceInfoExpanded || !connected) {
+      return;
+    }
+    if (deviceInfoRows !== null) {
+      return;
+    }
+    let cancelled = false;
+    setDeviceInfoLoading(true);
+    readDeviceInformationService(connected.id)
+      .then((rows) => {
+        if (!cancelled) {
+          setDeviceInfoRows(rows);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDeviceInfoRows([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDeviceInfoLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [deviceInfoExpanded, connected, deviceInfoRows]);
 
   useEffect(() => {
     const sub = BleManager.onStopScan(() => {
@@ -271,11 +399,20 @@ export default function CentralApp() {
       const bat = DEMO_TARGETS['heart-rate-monitor'].services.battery!;
       await BleManager.retrieveServices(peripheralId);
       addLog('info', 'Services discovered');
-      await BleManager.startNotification(
-        peripheralId,
-        hr.service,
-        hr.measurement
-      );
+      try {
+        await BleManager.startNotification(
+          peripheralId,
+          hr.service,
+          hr.measurement
+        );
+      } catch (e) {
+        if (Platform.OS === 'ios') {
+          addLog('info', 'HR notify: retry with short UUIDs (180D / 2A37)');
+          await BleManager.startNotification(peripheralId, '180D', '2A37');
+        } else {
+          throw e;
+        }
+      }
       await BleManager.startNotification(
         peripheralId,
         bat.service,
@@ -300,18 +437,20 @@ export default function CentralApp() {
     async (peripheralId: string) => {
       const lbs = DEMO_TARGETS['nordic-lbs'].services.lbs!;
       const bat = DEMO_TARGETS['nordic-lbs'].services.battery!;
-      await BleManager.retrieveServices(peripheralId);
-      addLog('info', 'Services discovered');
+      const peripheralInfo = await BleManager.retrieveServices(peripheralId);
+      addLog('info', 'Services discovered: ' + JSON.stringify({peripheralInfo, lbs, bat}));
       await BleManager.startNotification(
         peripheralId,
         lbs.service,
         lbs.button
       );
+      addLog('info', `Subscribed: button notification: ${lbs.button}`);
       await BleManager.startNotification(
         peripheralId,
         bat.service,
         bat.level
       );
+      addLog('info', `Subscribed: battery notification: ${bat.level}`);
       try {
         const batBytes = await BleManager.read(
           peripheralId,
@@ -322,6 +461,26 @@ export default function CentralApp() {
       } catch {
         /* optional */
       }
+      try {
+        const btnBytes = await BleManager.read(
+          peripheralId,
+          lbs.service,
+          lbs.button
+        );
+        setButtonLine(formatLbsButtonState(btnBytes[0] ?? 0));
+      } catch {
+        /* optional — UI stays at -- until first notify */
+      }
+      try {
+        const ledBytes = await BleManager.read(
+          peripheralId,
+          lbs.service,
+          lbs.led
+        );
+        setLedLit((ledBytes[0] ?? 0) !== 0);
+      } catch {
+        setLedLit(false);
+      }
       addLog('info', 'Subscribed: button + battery notifications');
     },
     [addLog]
@@ -329,10 +488,24 @@ export default function CentralApp() {
 
   const handleConnect = useCallback(
     async (p: Peripheral) => {
+      clearScanFallbackTimer();
+      scanGenerationRef.current += 1;
+      setScanning(false);
+      try {
+        await BleManager.stopScan();
+      } catch {
+        /* not scanning or native already idle */
+      }
       setBusy(true);
+      setConnectingId(p.id);
+      setDeviceInfoExpanded(false);
+      setDeviceInfoRows(null);
       try {
         await BleManager.connect(p.id);
         setConnected(p);
+        setHrBpm(null);
+        setBatteryLine('--');
+        setButtonLine('--');
         addLog('event', `Connected: ${p.name || p.id}`);
         if (targetId === 'heart-rate-monitor') {
           await setupHeart(p.id);
@@ -343,9 +516,10 @@ export default function CentralApp() {
         addLog('error', `Connect failed: ${e}`);
       } finally {
         setBusy(false);
+        setConnectingId(null);
       }
     },
-    [addLog, setupHeart, setupNordic, targetId]
+    [addLog, clearScanFallbackTimer, setupHeart, setupNordic, targetId]
   );
 
   const handleDisconnect = useCallback(async () => {
@@ -359,9 +533,18 @@ export default function CentralApp() {
       addLog('error', `Disconnect: ${e}`);
     } finally {
       setConnected(null);
+      setHrBpm(null);
+      setBatteryLine('--');
+      setButtonLine('--');
+      setDeviceInfoExpanded(false);
+      setDeviceInfoRows(null);
       setBusy(false);
     }
   }, [addLog, connected]);
+
+  const toggleDeviceInfo = useCallback(() => {
+    setDeviceInfoExpanded((v) => !v);
+  }, []);
 
   const writeLed = useCallback(
     async (on: boolean) => {
@@ -377,6 +560,7 @@ export default function CentralApp() {
           lbs.led,
           [on ? 1 : 0]
         );
+        setLedLit(on);
         addLog('data', `LED write: ${on ? 'ON' : 'OFF'}`);
       } catch (e) {
         addLog('error', `LED write failed: ${e}`);
@@ -389,135 +573,412 @@ export default function CentralApp() {
 
   const clearLogs = () => setLogs([]);
 
+  /** While connected, target and scan must stay fixed until disconnect. */
+  const profileAndScanLocked = connected != null;
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>BLE Central Demo</Text>
-        <Text style={styles.sub}>
-          Matches peripheral profiles in ../profiles (scan by service UUID).
-        </Text>
-
-        <Text style={styles.section}>Target profile</Text>
-        {(Object.keys(DEMO_TARGETS) as DemoTargetId[]).map((id) => {
-          const sel = targetId === id;
-          return (
-            <TouchableOpacity
-              key={id}
-              style={[styles.card, sel && styles.cardSel]}
-              onPress={() => {
-                setTargetId(id);
-                deviceMapRef.current.clear();
-                setDevices([]);
-                addLog('info', `Target: ${DEMO_TARGETS[id].label}`);
-              }}
-            >
-              <Text style={styles.cardTitle}>{DEMO_TARGETS[id].label}</Text>
-              <Text style={styles.cardHint}>
-                Names: {DEMO_TARGETS[id].nameHints.join(', ')}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-
-        <TouchableOpacity
-          style={[styles.btn, scanning && styles.btnDisabled]}
-          onPress={handleScan}
-          disabled={!bleOk || scanning}
+      <View style={[styles.main, showLogs && styles.mainWithLogs]}>
+        <View style={styles.header}>
+          <View style={styles.headerTitleRow}>
+            <Image
+              source={require('./assets/app-icon.png')}
+              style={styles.headerIcon}
+              accessibilityLabel="App icon"
+              accessibilityRole="image"
+            />
+            <Text style={styles.title}>BLE Central App</Text>
+          </View>
+        </View>
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
         >
-          <Text style={styles.btnText}>
-            {scanning ? 'Scanning…' : 'Scan (8s)'}
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.section}>Target profile</Text>
+          {(Object.keys(DEMO_TARGETS) as DemoTargetId[]).map((id) => {
+            const sel = targetId === id;
+            return (
+              <TouchableOpacity
+                key={id}
+                testID={`central-target-${id}`}
+                accessibilityLabel={`Central target ${DEMO_TARGETS[id].label}`}
+                accessibilityState={{ disabled: profileAndScanLocked }}
+                disabled={profileAndScanLocked}
+                style={[
+                  styles.card,
+                  sel && styles.cardSel,
+                  profileAndScanLocked && styles.cardDisabled,
+                ]}
+                onPress={() => {
+                  setTargetId(id);
+                  deviceMapRef.current.clear();
+                  setDevices([]);
+                  addLog('info', `Target: ${DEMO_TARGETS[id].label}`);
+                }}
+              >
+                <Text style={styles.cardTitle}>{DEMO_TARGETS[id].label}</Text>
+                <Text style={styles.cardHint}>
+                  [{DEMO_TARGETS[id].nameHints.join(', ')}]
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
 
-        <Text style={styles.section}>Devices</Text>
-        {devices.length === 0 ? (
-          <Text style={styles.muted}>No matching peripherals yet.</Text>
-        ) : (
-          devices.map((d) => (
-            <TouchableOpacity
-              key={d.id}
-              style={styles.deviceRow}
-              onPress={() => handleConnect(d)}
-              disabled={!!connected || busy}
-            >
-              <Text style={styles.deviceName}>{d.name || '(no name)'}</Text>
-              <Text style={styles.deviceId}>{d.id}</Text>
-            </TouchableOpacity>
-          ))
-        )}
-
-        {connected && (
-          <View style={styles.box}>
-            <Text style={styles.section}>Connected</Text>
-            <Text style={styles.mono}>
-              {connected.name || connected.id}
+          <TouchableOpacity
+            testID="central-scan"
+            accessibilityLabel={
+              profileAndScanLocked
+                ? 'Central scan disabled while connected'
+                : scanning
+                  ? 'Central scan scanning'
+                  : 'Central scan eight seconds'
+            }
+            accessibilityState={{ disabled: !bleOk || scanning || profileAndScanLocked }}
+            style={[
+              styles.btn,
+              (scanning || profileAndScanLocked) && styles.btnDisabled,
+            ]}
+            onPress={handleScan}
+            disabled={!bleOk || scanning || profileAndScanLocked}
+          >
+            <Text style={styles.btnText}>
+              {scanning ? 'Scanning…' : 'Scan'}
             </Text>
-            {targetId === 'heart-rate-monitor' && (
-              <>
-                <Text style={styles.metric}>HR: {hrLine}</Text>
-                <Text style={styles.metric}>Battery: {batteryLine}</Text>
-              </>
-            )}
-            {targetId === 'nordic-lbs' && (
-              <>
-                <Text style={styles.metric}>Button: {buttonLine}</Text>
-                <Text style={styles.metric}>Battery: {batteryLine}</Text>
-                <View style={styles.row}>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={() => writeLed(true)}
-                    disabled={busy}
+          </TouchableOpacity>
+
+          <Text style={styles.section}>Devices</Text>
+          {devices.length === 0 ? (
+            <Text style={styles.muted}>No matching peripherals yet.</Text>
+          ) : (
+            devices.map((d) => {
+              const deviceTitle = (
+                d.name ||
+                d.advertising?.localName ||
+                ''
+              ).trim();
+              const deviceA11yName = deviceTitle || d.id;
+              const targetLabel = DEMO_TARGETS[targetId].label;
+              const isThisConnected = connected?.id === d.id;
+              const showRowBusy =
+                busy &&
+                (connectingId === d.id || connected?.id === d.id);
+              const infoButton = (
+                <TouchableOpacity
+                  testID="central-device-info"
+                  accessibilityLabel={
+                    deviceInfoExpanded
+                      ? 'Central device information expanded'
+                      : 'Central show device information'
+                  }
+                  style={[
+                    styles.deviceInfoSmall,
+                    deviceInfoExpanded && styles.deviceInfoSmallActive,
+                  ]}
+                  onPress={toggleDeviceInfo}
+                  disabled={busy}
+                >
+                  <Text
+                    style={[
+                      styles.deviceInfoSmallText,
+                      deviceInfoExpanded && styles.deviceInfoSmallTextActive,
+                    ]}
                   >
-                    <Text style={styles.btnText}>LED ON</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={() => writeLed(false)}
-                    disabled={busy}
-                  >
-                    <Text style={styles.btnText}>LED OFF</Text>
-                  </TouchableOpacity>
+                    Info
+                  </Text>
+                </TouchableOpacity>
+              );
+              return (
+                <View
+                  key={d.id}
+                  testID={`central-device-${d.id}`}
+                  accessibilityLabel={
+                    isThisConnected
+                      ? `Central ${targetLabel}, ${deviceA11yName}, connected`
+                      : undefined
+                  }
+                  style={[
+                    styles.deviceRow,
+                    isThisConnected && styles.deviceRowConnected,
+                  ]}
+                >
+                  {isThisConnected ? (
+                    <>
+                      <View style={styles.deviceCardHeader}>
+                        <View style={styles.deviceHeaderLeft}>
+                          <Text style={styles.deviceTargetTitle}>{targetLabel}</Text>
+                        </View>
+                        <View style={styles.deviceHeaderActions}>
+                          {showRowBusy && (
+                            <ActivityIndicator
+                              size="small"
+                              color="#8ab4d8"
+                              style={styles.deviceBusySpinner}
+                            />
+                          )}
+                          <TouchableOpacity
+                            testID="central-disconnect"
+                            accessibilityLabel="Central disconnect"
+                            style={styles.deviceDisconnectSmall}
+                            onPress={handleDisconnect}
+                            disabled={busy}
+                          >
+                            <Text style={styles.deviceDisconnectSmallText}>Disconnect</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      {targetId === 'heart-rate-monitor' && (
+                        <>
+                          <HeartRateGraph
+                            bpm={hrBpm ?? 0}
+                            testID="central-metric-hr"
+                            plotTestID="central-metric-hr-plot"
+                          />
+                          <View style={styles.metricRow}>
+                            <View style={styles.metricRowLeft}>
+                              <Text style={styles.metricBatteryIcon}>{BATTERY_EMOJI}</Text>
+                              <Text
+                                testID="central-metric-battery"
+                                style={[styles.metric, styles.metricInSplit]}
+                              >
+                                Battery: {batteryLine}
+                              </Text>
+                            </View>
+                            {infoButton}
+                          </View>
+                        </>
+                      )}
+                      {targetId === 'nordic-lbs' && (
+                        <>
+                          <View style={styles.metricSplitRow}>
+                            <View style={styles.metricSplitLeft}>
+                              <Text
+                                testID="central-metric-button"
+                                style={[styles.metric, styles.metricInSplit]}
+                              >
+                                <Text style={styles.metricPlain}>Button state: </Text>
+                                <Text
+                                  style={
+                                    buttonLine === 'ON'
+                                      ? styles.metricStateOn
+                                      : buttonLine === 'OFF'
+                                        ? styles.metricStateOff
+                                        : buttonLine === 'Error'
+                                          ? styles.metricStateError
+                                          : styles.metricStateMuted
+                                  }
+                                >
+                                  {buttonLine}
+                                </Text>
+                              </Text>
+                            </View>
+                            <View style={styles.metricSplitRight}>
+                              <Text style={styles.metricBatteryIcon}>{BATTERY_EMOJI}</Text>
+                              <Text
+                                testID="central-metric-battery"
+                                style={[styles.metric, styles.metricInSplit]}
+                              >
+                                Battery: {batteryLine}
+                              </Text>
+                            </View>
+                          </View>
+                          <View style={styles.ledControlRow}>
+                            <View style={styles.ledControlRowMain}>
+                              <Text style={styles.ledSectionLabel}>LED:</Text>
+                              <View style={styles.ledBtnGroup}>
+                                <TouchableOpacity
+                                  testID="central-led-on"
+                                  accessibilityLabel="Central LED on"
+                                  style={[
+                                    styles.ledPillBtn,
+                                    ledLit && styles.ledPillBtnSelected,
+                                  ]}
+                                  onPress={() => writeLed(true)}
+                                  disabled={busy}
+                                >
+                                  <Text style={[styles.ledPillEmoji, styles.ledEmojiOn]}>
+                                    {BULB_EMOJI}
+                                  </Text>
+                                  <Text style={styles.ledPillCaption}>ON</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  testID="central-led-off"
+                                  accessibilityLabel="Central LED off"
+                                  style={[
+                                    styles.ledPillBtn,
+                                    !ledLit && styles.ledPillBtnSelected,
+                                  ]}
+                                  onPress={() => writeLed(false)}
+                                  disabled={busy}
+                                >
+                                  <Text style={[styles.ledPillEmoji, styles.ledEmojiOff]}>
+                                    {BULB_EMOJI}
+                                  </Text>
+                                  <Text style={styles.ledPillCaption}>OFF</Text>
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                            {infoButton}
+                          </View>
+                        </>
+                      )}
+                      {deviceInfoExpanded && (
+                        <View
+                          style={[
+                            styles.deviceInfoPanelRounded,
+                            deviceInfoExpanded && styles.deviceInfoSmallActive,
+                          ]}
+                        >
+                          <View style={styles.deviceInfoLine}>
+                            <Text style={styles.deviceInfoLabel}>Device name</Text>
+                            <Text
+                              style={styles.deviceInfoValue}
+                              selectable
+                              testID="central-device-info-device-name"
+                            >
+                              {deviceTitle || '(no name)'}
+                            </Text>
+                          </View>
+                          <View style={styles.deviceInfoLine}>
+                            <Text style={styles.deviceInfoLabel}>Device UUID</Text>
+                            <Text
+                              style={[styles.deviceInfoValue, styles.mono]}
+                              selectable
+                              testID="central-device-info-uuid"
+                            >
+                              {d.id}
+                            </Text>
+                          </View>
+                          {deviceInfoLoading ? (
+                            <ActivityIndicator color="#8ab4d8" />
+                          ) : deviceInfoRows && deviceInfoRows.length > 0 ? (
+                            deviceInfoRows.map((row) => (
+                              <View key={row.label} style={styles.deviceInfoLine}>
+                                <Text style={styles.deviceInfoLabel}>{row.label}</Text>
+                                <Text style={styles.deviceInfoValue} selectable>
+                                  {row.value}
+                                </Text>
+                              </View>
+                            ))
+                          ) : (
+                            <Text style={styles.deviceInfoEmpty}>
+                              No device information could be read (DIS may be absent).
+                            </Text>
+                          )}
+                        </View>
+                      )}
+                    </>
+                  ) : (
+                    <View style={styles.deviceCardHeader}>
+                      <View style={styles.deviceHeaderLeft}>
+                        <Text style={styles.deviceTargetTitle}>{targetLabel}</Text>
+                      </View>
+                      {connected ? (
+                        <Text style={styles.deviceHeaderHint} numberOfLines={2}>
+                          Disconnect other device first
+                        </Text>
+                      ) : showRowBusy ? (
+                        <ActivityIndicator
+                          size="small"
+                          color="#8ab4d8"
+                          style={styles.deviceBusySpinner}
+                        />
+                      ) : (
+                        <TouchableOpacity
+                          testID={`central-connect-${d.id}`}
+                          accessibilityLabel={`Central connect ${deviceA11yName}`}
+                          style={styles.deviceConnectSmall}
+                          onPress={() => handleConnect(d)}
+                          disabled={busy}
+                        >
+                          <Text style={styles.deviceConnectSmallText}>Connect</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
                 </View>
-              </>
-            )}
-            <TouchableOpacity style={styles.btnDanger} onPress={handleDisconnect}>
-              <Text style={styles.btnText}>Disconnect</Text>
+              );
+            })
+          )}
+        </ScrollView>
+      </View>
+
+      {showLogs && (
+        <View style={styles.logPanel}>
+          <View style={styles.logHeader}>
+            <Text style={styles.section}>Logs</Text>
+            <TouchableOpacity onPress={clearLogs}>
+              <Text style={styles.link}>Clear</Text>
             </TouchableOpacity>
           </View>
-        )}
-
-        {busy && <ActivityIndicator color="#8ab4d8" style={{ marginTop: 12 }} />}
-
-        <View style={styles.logHeader}>
-          <Text style={styles.section}>Logs</Text>
-          <TouchableOpacity onPress={clearLogs}>
-            <Text style={styles.link}>Clear</Text>
-          </TouchableOpacity>
+          <ScrollView style={styles.logScroll}>
+            {logs.map((row) => (
+              <Text key={row.id} style={styles.logLine}>
+                <Text style={styles.logTime}>{row.t}</Text>{' '}
+                <Text
+                  style={
+                    row.type === 'error'
+                      ? styles.logErr
+                      : row.type === 'data'
+                        ? styles.logData
+                        : styles.logInfo
+                  }
+                >
+                  {row.message}
+                </Text>
+              </Text>
+            ))}
+          </ScrollView>
         </View>
-        {logs.map((row) => (
-          <Text key={row.id} style={styles.logLine}>
-            <Text style={styles.logTime}>{row.t}</Text>{' '}
-            <Text
-              style={
-                row.type === 'error'
-                  ? styles.logErr
-                  : row.type === 'data'
-                    ? styles.logData
-                    : styles.logInfo
-              }
-            >
-              {row.message}
-            </Text>
-          </Text>
-        ))}
-      </ScrollView>
+      )}
+      <TouchableOpacity
+        testID="central-toggle-logs"
+        accessibilityLabel={showLogs ? 'Hide central logs' : 'Show central logs'}
+        style={styles.fab}
+        onPress={() => setShowLogs((prev) => !prev)}
+      >
+        <Text style={styles.fabText}>{showLogs ? 'Logs–' : 'Logs+'}</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12141a' },
-  scroll: { padding: 16, paddingBottom: 40 },
+  safe: { flex: 1, backgroundColor: '#0f1f3d' },
+  main: {
+    flex: 1,
+  },
+  mainWithLogs: {
+    paddingBottom: '30%',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#1e3a8a',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 28,
+    height: 28,
+    marginRight: 10,
+    resizeMode: 'contain',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 40,
+  },
   title: {
     color: '#eceff4',
     fontSize: 22,
@@ -539,10 +1000,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#2d323c',
+    flexDirection: 'row',
   },
   cardSel: { borderColor: '#4a7ab0', backgroundColor: '#1a2228' },
+  cardDisabled: { opacity: 0.45 },
   cardTitle: { color: '#e4e7ec', fontSize: 16, fontWeight: '600' },
-  cardHint: { color: '#8b949e', fontSize: 12, marginTop: 4 },
+  cardHint: { color: '#8b949e', fontSize: 12, marginTop: 4, marginLeft: 4 },
   btn: {
     marginTop: 12,
     backgroundColor: '#1e3d2a',
@@ -553,15 +1016,6 @@ const styles = StyleSheet.create({
     borderColor: '#3d6b4f',
   },
   btnDisabled: { opacity: 0.5 },
-  btnDanger: {
-    marginTop: 12,
-    backgroundColor: '#3a2226',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#6b4548',
-  },
   btnText: { color: '#e4e7ec', fontWeight: '600' },
   muted: { color: '#6b7280', fontSize: 14 },
   deviceRow: {
@@ -572,25 +1026,232 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2d323c',
   },
-  deviceName: { color: '#e4e7ec', fontSize: 15, fontWeight: '600' },
-  deviceId: { color: '#8b949e', fontSize: 11, marginTop: 2 },
-  box: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#16181f',
-    borderRadius: 10,
+  deviceCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  deviceHeaderLeft: {
+    flex: 1,
+    marginRight: 8,
+    minWidth: 0,
+  },
+  deviceHeaderHint: {
+    color: '#6b7280',
+    fontSize: 11,
+    fontWeight: '500',
+    maxWidth: 112,
+    textAlign: 'right',
+    lineHeight: 15,
+  },
+  deviceConnectSmall: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#1e3d2a',
     borderWidth: 1,
-    borderColor: '#2d323c',
+    borderColor: '#3d6b4f',
+    alignSelf: 'flex-start',
+  },
+  deviceConnectSmallText: {
+    color: '#d1fae5',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  deviceDisconnectSmall: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#3a2226',
+    borderWidth: 1,
+    borderColor: '#6b4548',
+    alignSelf: 'flex-start',
+  },
+  deviceDisconnectSmallText: {
+    color: '#e8d6d8',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  deviceHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 0,
+  },
+  deviceBusySpinner: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  deviceInfoSmall: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#121820',
+    borderWidth: 1,
+    borderColor: '#283545',
+  },
+  deviceInfoSmallActive: {
+    backgroundColor: '#2d3f54',
+    borderColor: '#6b8fc4',
+  },
+  deviceInfoSmallText: {
+    color: '#7d8a99',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  deviceInfoSmallTextActive: {
+    color: '#e8eaed',
+  },
+  /** Info content panel: same border / fill treatment as `deviceInfoSmall`. */
+  deviceInfoPanelRounded: {
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#121820',
+    borderWidth: 1,
+    borderColor: '#283545',
+    alignSelf: 'stretch',
+  },
+  deviceInfoLine: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+    gap: 10,
+  },
+  deviceInfoLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8b949e',
+    width: 118,
+    flexShrink: 0,
+    paddingTop: 1,
+  },
+  deviceInfoValue: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 13,
+    color: '#e4e7ec',
+    lineHeight: 19,
+  },
+  deviceInfoEmpty: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+  /** Same copy as Target profile cards (`DEMO_TARGETS[targetId].label`). */
+  deviceTargetTitle: {
+    color: '#e4e7ec',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deviceRowConnected: {
+    borderColor: '#4a7ab0',
+    backgroundColor: '#141a22',
   },
   mono: { color: '#c9d1d9', fontSize: 12 },
   metric: { color: '#9ab6d4', fontSize: 16, marginTop: 8 },
-  row: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  smallBtn: {
-    flex: 1,
-    backgroundColor: '#2a3440',
-    paddingVertical: 10,
-    borderRadius: 8,
+  /** Inside `metricSplitRow`, avoid double vertical spacing. */
+  metricInSplit: { marginTop: 0 },
+  metricPlain: { color: '#9ab6d4', fontSize: 16 },
+  metricSplitRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 8,
+    gap: 8,
+  },
+  metricSplitLeft: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 4,
+  },
+  metricSplitRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 0,
+    marginLeft: 4,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    gap: 8,
+  },
+  metricRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    flex: 1,
+    minWidth: 0,
+  },
+  metricBatteryIcon: { fontSize: 18 },
+  metricStateOn: { color: '#86efac', fontWeight: '700', fontSize: 16 },
+  metricStateOff: { color: '#f87171', fontWeight: '700', fontSize: 16 },
+  metricStateError: { color: '#fbbf24', fontWeight: '700', fontSize: 16 },
+  metricStateMuted: { color: '#6b7280', fontSize: 16 },
+  ledControlRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 8,
+  },
+  ledControlRowMain: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    flex: 1,
+    minWidth: 0,
+  },
+  ledSectionLabel: {
+    color: '#9ab6d4',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  /** Small gap after “LED:” before ON / OFF pills. */
+  ledBtnGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+    marginLeft: 8,
+  },
+  ledPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2d323c',
+    backgroundColor: '#141a22',
+    gap: 6,
+  },
+  ledPillBtnSelected: {
+    borderColor: '#4a7ab0',
+    backgroundColor: '#1a2836',
+    borderWidth: 2,
+  },
+  ledPillEmoji: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  ledEmojiOff: {
+    opacity: 0.35,
+  },
+  ledEmojiOn: {
+    opacity: 1,
+    textShadowColor: '#e8c040',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  ledPillCaption: {
+    color: '#c9d1d9',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   logHeader: {
     flexDirection: 'row',
@@ -603,4 +1264,41 @@ const styles = StyleSheet.create({
   logInfo: { color: '#c9d1d9', fontSize: 12 },
   logErr: { color: '#f59e9b', fontSize: 12 },
   logData: { color: '#86efac', fontSize: 12 },
+  logPanel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '30%',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: '#0a162c',
+    borderTopWidth: 1,
+    borderTopColor: '#1e3a8a',
+  },
+  logScroll: {
+    marginTop: 4,
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#1e3a8a',
+    borderWidth: 1,
+    borderColor: '#2563eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  fabText: {
+    color: '#e5e7eb',
+    fontSize: 13,
+    fontWeight: '600',
+  },
 });

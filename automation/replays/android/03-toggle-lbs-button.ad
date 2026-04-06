@@ -1,0 +1,11 @@
+context platform=android
+open "Peripheral App"
+wait 2000
+scroll down
+wait 400
+scroll down
+wait 400
+scroll down
+wait 400
+click "label=\"Peripheral LBS button switch\""
+wait 2000
