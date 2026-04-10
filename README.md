@@ -100,6 +100,17 @@ Remote mode uses the **same** `applyValueGenerators` + `ProfileEngine` pipeline 
 
 **Firmware sync** (OTA, auto-import from firmware, etc.) is **not implemented**; it is documented as a future direction in [remote-profile/README.md](remote-profile/README.md).
 
+## 📚 Articles & Deep Dives
+
+This project is accompanied by a series of detailed technical articles:
+
+- [Stop Waiting for Hardware: Rethinking BLE Development](https://medium.com/@rajnibhaimgediya/stop-waiting-for-hardware-rethinking-how-we-build-and-validate-ble-systems-65d22a8b5871)  
+- [Designing Profile-Driven BLE Systems](https://medium.com/@rajnibhaimgediya/designing-profile-driven-ble-systems-architecture-and-execution-1ba02f94a73e)  
+- [From Simulation to Validation: Building Reliable BLE Systems](https://medium.com/@rajnibhaimgediya/from-simulation-to-validation-building-reliable-ble-systems-at-scale-12ede42a1f5c)  
+
+These articles explain the **architecture, motivation, and real-world use cases** behind this platform.
+
+
 ## Architecture overview
 
 <img width="2561" height="1471" alt="ble-excalidraw" src="https://github.com/user-attachments/assets/0a2f40d6-ac44-4dff-8358-fde33ff34f16" />
