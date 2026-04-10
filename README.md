@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/ble-validation-platform-logo.png" alt="BLE validation platform logo" width="400" />
+</p>
+
 # ble-validation-platform
 
 Profile-driven BLE simulation, fault injection, and validation platform for connected systems
