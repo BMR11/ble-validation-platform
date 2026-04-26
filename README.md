@@ -372,6 +372,10 @@ This approach is designed to complement traditional hardware-based testing by:
 
 - **Advanced OTA Simulation**: Extend the platform to simulate firmware update workflows and edge cases, enabling validation of OTA pipelines without requiring actual hardware updates.
 
+- **Shared Logic Layer (Firmware ↔ Mobile)**: Explore using a shared C-based logic layer that could be reused between device firmware and Android-native peripheral implementations. This would allow core device behavior (state handling, value generation, interaction logic) to remain consistent across both environments, while only the BLE transport layer differs. The goal is to reduce divergence between simulated and real device behavior and make validation more representative of production systems.
+    
+- **Telemetry-Driven Profile Generation (AI-Assisted)**: Capture real BLE communication traces between central and peripheral devices and use them to generate reusable profiles automatically. This could help recreate real-world issues more reliably and reduce the gap between simulation and production behavior. Over time, AI-assisted approaches may help identify patterns, generate edge cases, and keep profiles aligned with how devices behave in practice.
+
 ## License / upstream
 
 Peripheral BLE engine and types live in the vendored **`rn-ble-peripheral-module`** package under [`local_modules/rn-ble-peripheral-module`](local_modules/rn-ble-peripheral-module).
