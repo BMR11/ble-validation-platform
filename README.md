@@ -313,6 +313,7 @@ Schema and `valueGenerator` keys: [docs/profile-schema.md](docs/profile-schema.m
 
 ## Documentation index
 
+- [docs/README.md](docs/README.md) — documentation map and suggested reading paths.
 - [docs/remote-profiles.md](docs/remote-profiles.md) — server-driven profile concept and peripheral integration.
 - [docs/remote-profile-api.md](docs/remote-profile-api.md) — HTTP API reference.
 - [docs/profile-versioning.md](docs/profile-versioning.md) — draft / published / latest rules.
