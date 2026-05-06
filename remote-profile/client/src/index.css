@@ -154,3 +154,84 @@ button {
   font-size: 1.25rem;
   font-weight: 600;
 }
+
+.profile-builder {
+  max-width: 880px;
+}
+
+.profile-builder .card {
+  margin-bottom: 0.75rem;
+}
+
+.builder-service {
+  border-color: #35425a;
+}
+
+.builder-state {
+  border-color: #3a3548;
+  margin-bottom: 0.75rem;
+}
+
+.builder-transition {
+  margin-top: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: #12151c;
+  border-color: #2f2a38;
+}
+
+.builder-char {
+  margin-top: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: #12151c;
+  border-color: #2a3140;
+}
+
+.builder-char-head,
+.builder-service-head {
+  margin-bottom: 0.5rem;
+}
+
+.builder-drag {
+  cursor: grab;
+  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.builder-drag:active {
+  cursor: grabbing;
+}
+
+.builder-prop-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin-top: 0.35rem;
+}
+
+.builder-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #c4cad8;
+  cursor: pointer;
+}
+
+.builder-inline {
+  margin-bottom: 0.5rem;
+}
+
+.builder-nested {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #2a3140;
+}
+
+.doc-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+  flex-wrap: wrap;
+}

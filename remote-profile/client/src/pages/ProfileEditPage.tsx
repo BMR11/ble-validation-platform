@@ -8,6 +8,7 @@ import {
   type StoredProfile,
 } from '../api';
 import { useAuth } from '../auth';
+import ProfileDragDropBuilder from '../components/ProfileDragDropBuilder';
 
 export default function ProfileEditPage() {
   const { profileId: rawPid, version: rawVer } = useParams();
@@ -25,6 +26,15 @@ export default function ProfileEditPage() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [docTab, setDocTab] = useState<'builder' | 'json'>('builder');
+  const [builderMountKey, setBuilderMountKey] = useState(0);
+
+  function setDocTabSafe(next: 'builder' | 'json') {
+    if (next === 'builder' && docTab === 'json') {
+      setBuilderMountKey((k) => k + 1);
+    }
+    setDocTab(next);
+  }
 
   useEffect(() => {
     if (!token || !profileId || !version) {
@@ -188,14 +198,43 @@ export default function ProfileEditPage() {
           <input id="cl" value={changelog} onChange={(e) => setChangelog(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="doc">Profile JSON (device document)</label>
-          <textarea
-            id="doc"
-            className="code"
-            value={docJson}
-            onChange={(e) => setDocJson(e.target.value)}
-            spellCheck={false}
-          />
+          <span id="doc-label">Profile document</span>
+          <div className="doc-tabs" role="tablist" aria-labelledby="doc-label">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={docTab === 'builder'}
+              className={docTab === 'builder' ? 'btn btn-primary' : 'btn btn-ghost'}
+              onClick={() => setDocTabSafe('builder')}
+            >
+              Visual builder
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={docTab === 'json'}
+              className={docTab === 'json' ? 'btn btn-primary' : 'btn btn-ghost'}
+              onClick={() => setDocTabSafe('json')}
+            >
+              JSON
+            </button>
+          </div>
+          {docTab === 'builder' ? (
+            <ProfileDragDropBuilder
+              key={builderMountKey}
+              docJson={docJson}
+              onDocJsonChange={setDocJson}
+            />
+          ) : (
+            <textarea
+              id="doc"
+              className="code"
+              value={docJson}
+              onChange={(e) => setDocJson(e.target.value)}
+              spellCheck={false}
+              aria-label="Profile JSON"
+            />
+          )}
         </div>
         <div className="row">
           <button type="submit" className="btn btn-primary" disabled={busy}>
