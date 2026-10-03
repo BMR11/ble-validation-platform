@@ -16,7 +16,7 @@ Remote profiles demonstrate **central management**: you can publish a new versio
 ## Flow
 
 1. Run **remote-profile** server (see [remote-profile/README.md](../remote-profile/README.md)).
-2. Edit and **publish** versions in the web admin (or rely on seeded data).
+2. Edit and **publish** versions in the web admin (or rely on seeded data). The editor has a drag-and-drop **Visual builder** and a **JSON** tab for the same document. See [Editing profiles](../remote-profile/README.md#editing-profiles).
 3. In **peripheral-app**, choose **Profile source → Remote**, tap **Fetch remote profiles**, then select a row. The app calls `GET /api/profiles/:profileId/latest` and passes the JSON through the same `applyValueGenerators` + `ProfileEngine` path as local files.
 
 ## Configuration (environment variables — no IPs in Git)

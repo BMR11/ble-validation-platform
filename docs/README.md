@@ -23,7 +23,7 @@ Use it to find the right level of detail without reading every file in order.
 
 - [Central app README](../central-app/README.md) — central app setup, iOS notes, Android run steps, and tests.
 - [Peripheral app README](../peripheral-app/README.md) — peripheral app setup, environment configuration, release APK notes, and automation hooks.
-- [Remote profile README](../remote-profile/README.md) — remote profile service setup and LAN demo workflow.
+- [Remote profile README](../remote-profile/README.md) — remote profile service setup, visual builder, and LAN demo workflow.
 - [Automation README](../automation/README.md) — agent-device and ADB-based end-to-end automation workflows.
 
 ## Remote profiles

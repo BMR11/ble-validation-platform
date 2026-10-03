@@ -65,7 +65,7 @@ The smallest profile that the engine will accept:
 | -------------- | ---------- | -------- | -------------------- | ---------------------------------------------------------- |
 | `localName`    | `string`   | Yes      | --                   | Name included in advertising packets                       |
 | `deviceName`   | `string`   | No       | Same as `localName`  | GAP device name set via `setName()`                        |
-| `serviceUUIDs` | `string[]` | No       | Auto-derived         | UUIDs in advertising data. Auto-derived from all services if omitted |
+| `serviceUUIDs` | `string[]` | No       | Auto-derived         | UUID list for advertising. Auto-derived from services in array order if omitted. The engine advertises only the first UUID. |
 
 ---
 

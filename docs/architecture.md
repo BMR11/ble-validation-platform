@@ -9,7 +9,7 @@ This repository implements a **two-app BLE demo**:
 | `peripheral-app/` | GATT server + advertiser | `rn-ble-peripheral-module` | **Android** (peripheral mode) |
 | `central-app/` | Scanner + GATT client | `react-native-ble-manager` | **iOS or Android** |
 
-Behavior of the peripheral is driven by **JSON profiles**: bundled under [`profiles/local/`](../profiles/local/) and/or **fetched at runtime** from the [**remote-profile**](../remote-profile/) service (see [remote-profiles.md](./remote-profiles.md)). TypeScript maps optional `valueGenerator` keys to concrete simulation blocks before the shared **profile engine** runs (migrated from `rn-ble-peripheral-module` example branch `test-pripheral-config-profile-mar23`).
+Behavior of the peripheral is driven by **JSON profiles**: bundled under [`profiles/local/`](../profiles/local/) and/or **fetched at runtime** from the [**remote-profile**](../remote-profile/) service (see [remote-profiles.md](./remote-profiles.md)). The admin UI edits those documents in a drag-and-drop visual builder or in JSON. TypeScript maps optional `valueGenerator` keys to concrete simulation blocks before the shared **profile engine** runs (migrated from `rn-ble-peripheral-module` example branch `test-pripheral-config-profile-mar23`).
 
 ```mermaid
 flowchart LR
