@@ -220,11 +220,15 @@ export default function ProfileEditPage() {
             </button>
           </div>
           {docTab === 'builder' ? (
-            <ProfileDragDropBuilder
-              key={builderMountKey}
-              docJson={docJson}
-              onDocJsonChange={setDocJson}
-            />
+            docJson ? (
+              <ProfileDragDropBuilder
+                key={builderMountKey}
+                docJson={docJson}
+                onDocJsonChange={setDocJson}
+              />
+            ) : (
+              <p className="muted">{error ? 'Profile document did not load.' : 'Loading profile…'}</p>
+            )
           ) : (
             <textarea
               id="doc"

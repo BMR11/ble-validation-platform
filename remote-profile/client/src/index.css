@@ -163,44 +163,212 @@ button {
   margin-bottom: 0.75rem;
 }
 
-.builder-service {
-  border-color: #35425a;
+.builder-help {
+  color: #8b93a5;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+  max-width: 72ch;
 }
 
-.builder-state {
-  border-color: #3a3548;
-  margin-bottom: 0.75rem;
+.builder-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.1rem 0 0.75rem;
 }
 
-.builder-transition {
-  margin-top: 0.65rem;
-  padding: 0.75rem 1rem;
-  background: #12151c;
-  border-color: #2f2a38;
+.builder-section-head h2 {
+  margin: 0 auto 0 0;
+  font-size: 1.15rem;
+  font-weight: 600;
 }
 
-.builder-char {
-  margin-top: 0.65rem;
-  padding: 0.75rem 1rem;
-  background: #12151c;
-  border-color: #2a3140;
+.builder-card {
+  background: #161a22;
+  border: 1px solid #2a3140;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
-.builder-char-head,
-.builder-service-head {
+.builder-nested .builder-card {
+  background: #10141c;
   margin-bottom: 0.5rem;
 }
 
-.builder-drag {
+.builder-card.is-over {
+  border-color: #7eb8ff;
+  outline: 2px solid #7eb8ff;
+  outline-offset: 2px;
+}
+
+.builder-card.is-dragging {
+  opacity: 0.4;
+}
+
+.builder-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.builder-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #2a3140;
+  background: #1e2633;
+  color: #8b93a5;
   cursor: grab;
-  padding: 0.25rem 0.5rem;
-  font-size: 1rem;
-  line-height: 1;
+  touch-action: none;
   user-select: none;
 }
 
-.builder-drag:active {
+.builder-grip:hover {
+  background: #252e3d;
+  color: #e8eaef;
+}
+
+.builder-grip:active {
   cursor: grabbing;
+}
+
+.builder-grip:focus-visible,
+.builder-title-btn:focus-visible,
+.builder-icon-btn:focus-visible {
+  outline: 2px solid #7eb8ff;
+  outline-offset: 2px;
+}
+
+.builder-title-btn {
+  flex: 1 1 12rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: inherit;
+  min-width: 0;
+  padding: 0.15rem 0;
+}
+
+.builder-title-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.builder-title-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.builder-subtitle {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #8b93a5;
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding-left: 1.05rem;
+}
+
+.builder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.builder-icon-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.builder-icon-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.builder-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #1a3024;
+  color: #c8e6d0;
+  border: 1px solid #3d6b4f;
+}
+
+.builder-body {
+  margin-top: 0.7rem;
+}
+
+.builder-empty {
+  border: 1px dashed #3d4a5f;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: #8b93a5;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.builder-empty.is-over {
+  border-color: #7eb8ff;
+  color: #d6e6ff;
+  outline: 2px solid #7eb8ff;
+  outline-offset: 2px;
+}
+
+.builder-overlay {
+  pointer-events: none;
+  max-width: 280px;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #3d6b4f;
+  background: #1c2430;
+  color: #e8eaef;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  font-size: 0.9rem;
+}
+
+.builder-overlay-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.builder-warn {
+  color: #e0c49d;
+  font-size: 0.8rem;
+  margin: 0.2rem 0 0;
 }
 
 .builder-prop-grid {
@@ -227,6 +395,16 @@ button {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px solid #2a3140;
+}
+
+.builder-nested > .row {
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.builder-nested h2 {
+  margin: 0;
+  font-size: 1rem;
 }
 
 .doc-tabs {
