@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { deleteProfile, fetchProfileDetail, type StoredProfile } from '../api';
 import { useAuth } from '../auth';
+import { IconRemove } from '../components/actionIcons';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function ProfileDetailPage() {
   const { profileId: rawId } = useParams();
@@ -11,6 +13,7 @@ export default function ProfileDetailPage() {
   const [p, setP] = useState<StoredProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!token || !profileId) {
@@ -39,9 +42,10 @@ export default function ProfileDetailPage() {
   }
 
   async function onDeleteProfile() {
-    if (!token || !p || !window.confirm(`Delete entire profile "${p.profileId}"?`)) {
+    if (!token || !p) {
       return;
     }
+    setConfirmDelete(false);
     setBusy(true);
     setError(null);
     try {
@@ -64,8 +68,15 @@ export default function ProfileDetailPage() {
           <h1 style={{ margin: '0.35rem 0 0' }}>{p?.name ?? profileId}</h1>
         </div>
         {p && (
-          <button type="button" className="btn btn-danger" disabled={busy} onClick={onDeleteProfile}>
-            Delete profile
+          <button
+            type="button"
+            className="btn btn-danger icon-btn"
+            disabled={busy}
+            onClick={() => setConfirmDelete(true)}
+            aria-label="Delete profile"
+            title="Delete profile"
+          >
+            <IconRemove />
           </button>
         )}
       </div>
@@ -110,6 +121,19 @@ export default function ProfileDetailPage() {
               </div>
             ))}
         </>
+      )}
+      {p && (
+        <ConfirmDialog
+          open={confirmDelete}
+          title="Delete profile"
+          message={`Delete entire profile "${p.profileId}"?`}
+          confirmLabel="Delete"
+          busy={busy}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => {
+            void onDeleteProfile();
+          }}
+        />
       )}
     </div>
   );

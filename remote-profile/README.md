@@ -6,7 +6,7 @@ Small **full-stack demo** that shows how JSON BLE profiles can be **managed cent
 
 | Layer | Choice | Why |
 |--------|--------|-----|
-| Admin UI | React 19 + TypeScript + Vite | Fast dev server, simple build, no heavy UI kit |
+| Admin UI | React 19 + TypeScript + Vite + `@dnd-kit` | Visual drag-and-drop builder, with a JSON tab for the same document |
 | API | Express + TypeScript (`tsx` for dev) | Familiar, minimal boilerplate |
 | Persistence | **Single JSON file** (`server/data/store.json`) | Easiest to inspect, diff, and reset for a demo (no DB process). Seeded from `server/seed/initial-store.json` on first run. |
 
@@ -73,6 +73,33 @@ For a static build served separately, set `VITE_API_URL` to the API origin (for 
 
 Passwords are **plain text in the JSON store** — this is intentional for a local admin demo only.
 
+## Editing profiles
+
+Open a profile, then a version. The edit page has two parts:
+
+- **Library** — display name, category, status, changelog, and notes. This is how the version is listed. It is not part of the BLE document.
+- **Profile** — the BLE document. **Visual builder** and **JSON** edit the same document. Switching from JSON back to the builder reloads the builder from that JSON.
+
+The builder is split into **Device**, **State machine**, and **Services**. A service contains characteristics. A state contains transitions. Borders and background tints show that nesting.
+
+- Drag the grip on a card to reorder it, or to move a characteristic into another service or a transition into another state. **Up** and **Down** do the same move inside one list.
+
+![Dragging Heart Rate Control Point from the Heart Rate service into Battery](../docs/media/remote-profile-builder.gif)
+
+- **Plus** adds a profile, version action, state, service, characteristic, or transition. **Trash** removes or deletes. Every remove and delete asks for confirmation before it runs.
+- Each section has one expand/collapse control. It expands every card in that section, then switches to collapse.
+
+Order in the builder is the order stored in JSON:
+
+- **Services** are registered in list order. If `advertising.serviceUUIDs` is omitted, the engine builds that list from the services (and Device Information, when `deviceInfo` is set) and advertises only the first UUID.
+- **Characteristics** are registered in list order. Centrals address them by UUID, so order does not change which characteristic is used.
+- **States** keep list order in the JSON object. The start state is the **Start state** field, not whichever card is first.
+- **Transitions** are checked in list order. The first matching transition wins.
+
+The builder keeps fields it does not show, including `permissions`, `value`, `valueGenerator`, `simulation`, `stateOverrides`, `ui`, `onWrite`, and `deviceInfo`. Use the JSON tab to edit those. Saving from the builder writes them back unchanged.
+
+Create, save, cancel, and delete in the page header are icon buttons. Hover a button to see its name.
+
 ## API summary
 
 Documented in [docs/remote-profile-api.md](../docs/remote-profile-api.md).
@@ -99,7 +126,7 @@ Multiple **version rows** per `profileId`, each with `draft` or `published` stat
 Possible later workflow:
 
 1. Firmware or GATT spec changes on real hardware.
-2. Profile JSON is updated in this admin tool; version is bumped; row is **published**.
+2. Profile JSON is updated in this admin tool (visual builder or JSON tab); version is bumped; row is **published**.
 3. Peripheral (or a companion service) **pulls latest** and the emulator exposes new services/characteristics without shipping a new app binary (policy and validation TBD).
 
 Stretch ideas: import pipeline from **recorded BLE traffic** or **firmware headers**; optional **AI-assisted** draft profiles. **None of this exists in the current repo** — documentation only.
@@ -159,7 +186,7 @@ To bind API to **localhost only** again: `HOST=127.0.0.1 npm run dev` in `server
 
 ```
 remote-profile/
-  client/          # Vite React admin
+  client/          # Vite React admin (visual builder + JSON)
   server/        # Express API + JSON store
     seed/        # initial-store.json (committed)
     data/        # store.json (runtime, gitignored)

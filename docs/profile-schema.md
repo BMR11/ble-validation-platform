@@ -12,10 +12,21 @@ Profiles are JSON documents consumed by the peripheral **`ProfileEngine`** (see 
 | `description` | no | Shown in the peripheral UI. |
 | `advertising.localName` | yes | GAP name used when advertising. |
 | `advertising.deviceName` | no | Optional adapter/device name where supported. |
-| `advertising.serviceUUIDs` | no | Explicit UUIDs in advertising data. When omitted, derived from `services` (+DIS if `deviceInfo` is present). |
+| `advertising.serviceUUIDs` | no | UUIDs considered for advertising. When omitted, derived from `services` in array order (+ DIS if `deviceInfo` is present). The engine advertises only the first UUID in that list. |
 | `deviceInfo` | no | Shorthand for standard **Device Information Service** (0x180A). |
 | `stateMachine` | no | Idle/active/error style flows; transitions on subscribe, unsubscribe, write, timer, manual. |
 | `services` | yes | List of GATT services and characteristics. |
+
+## Order
+
+Array order is stored as written and used by the engine as follows. The remote-profile visual builder shows the same rules on the edit page.
+
+| List | What order changes |
+|------|--------------------|
+| `services` | GATT registration order. The first service UUID is what gets advertised when `advertising.serviceUUIDs` is omitted. |
+| Characteristics inside a service | Registration and display order. Centrals look up a characteristic by UUID. |
+| `stateMachine.states` | Key order in the JSON object. The running start state is `stateMachine.initial`, not the first key. |
+| `transitions` on a state | Match order. The first transition whose trigger matches is the one that runs. |
 
 ## Characteristics
 

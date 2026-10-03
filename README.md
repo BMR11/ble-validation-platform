@@ -199,7 +199,9 @@ These articles explain the **architecture, motivation, and real-world use cases*
 
 - **Peripheral** (`peripheral-app/`): local bundles from `../profiles/local/*.json` and/or fetches from remote-profile; executes `ProfileEngine`.
 - **Central** (`central-app/`): user picks a demo target (heart rate vs Nordic LBS), scans by service UUID, connects, reads DIS into an expandable **Info** panel, discovers services, subscribes, writes LED for Nordic.
-- **Remote-profile** (`remote-profile/`): React admin UI + Express API + JSON file store — see [remote-profile/README.md](remote-profile/README.md).
+- **Remote-profile** (`remote-profile/`): React admin UI (drag-and-drop visual builder and JSON editor) + Express API + JSON file store — see [remote-profile/README.md](remote-profile/README.md).
+
+![Dragging a characteristic between services in the profile builder](docs/media/remote-profile-builder.gif)
 
 More detail: [docs/architecture.md](docs/architecture.md).
 
@@ -210,7 +212,7 @@ ble-validation-platform/
   peripheral-app/
   central-app/
   remote-profile/
-    client/           # Vite React admin
+    client/           # Vite React admin (visual builder + JSON)
     server/           # Express API + JSON persistence
   profiles/
     local/            # Bundled JSON (heart-rate, nordic-lbs)
@@ -363,8 +365,6 @@ This approach is designed to complement traditional hardware-based testing by:
 - **Automation**: Orchestrate both central and peripheral apps and validate behavior end-to-end using tools like [Agent Device (Callstack)](https://github.com/callstack/agent-device), enabling repeatable and scalable BLE validation workflows.
 
 - **Firmware–Profile Sync Platform**: Enable automatic synchronization between device firmware and BLE profiles. Changes to services or characteristics in firmware (e.g., via pull requests) can trigger a CI-integrated webhook pipeline that updates or generates corresponding profiles in the remote-profile system, keeping simulated devices aligned with real firmware behavior.
-
-- **Drag-and-Drop Profile Builder**: Provide a UI-based workflow to create and modify BLE profiles without code, reducing the barrier to entry for QA and cross-functional teams.
 
 - **Telemetry & AI-Driven Profile Generation**: Capture real-world BLE communication traces between central and peripheral devices and use them to generate reusable profiles. Future enhancements may leverage AI/ML techniques to infer device behavior patterns, simulate realistic edge cases, and automatically adapt profiles based on observed system behavior.
 

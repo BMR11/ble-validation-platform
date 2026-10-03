@@ -9,7 +9,7 @@
 
 You'll need:
 - Knowledge of the BLE device you want to emulate (services, characteristics, UUIDs)
-- A text editor for JSON
+- A text editor for JSON, or the remote-profile admin visual builder for a version stored on the server (see [Editing profiles](../../../../remote-profile/README.md#editing-profiles))
 - The example app running to test your profile
 
 ---
