@@ -22,7 +22,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { IconDown, IconRemove, IconUp } from './actionIcons';
+import { IconAdd, IconChevron, IconCollapse, IconDown, IconExpand, IconRemove, IconUp } from './actionIcons';
+import ConfirmDialog from './ConfirmDialog';
 import {
   charSortableId,
   dragKind,
@@ -257,8 +258,9 @@ function countPhrase(count: number, singular: string, plural: string): string {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-function confirmRemove(name: string, count: number, singular: string, plural: string): boolean {
-  return window.confirm(`Remove "${name}" and its ${countPhrase(count, singular, plural)}?`);
+function removeMessage(name: string, count: number, singular: string, plural: string): string {
+  if (count > 0) return `Remove "${name}" and its ${countPhrase(count, singular, plural)}?`;
+  return `Remove "${name}"?`;
 }
 
 function stringList(value: unknown): string[] {
@@ -511,8 +513,8 @@ function stateOrderChanged(a: StateMachineStateRow[], b: StateMachineStateRow[])
   return false;
 }
 
-function cardClassName(isOver: boolean, isDragging: boolean): string {
-  return cx('builder-card', isOver && !isDragging && 'is-over', isDragging && 'is-dragging');
+function cardClassName(tone: string, isOver: boolean, isDragging: boolean): string {
+  return cx('builder-card', tone, isOver && !isDragging && 'is-over', isDragging && 'is-dragging');
 }
 
 function overlayCopy(
@@ -569,6 +571,7 @@ function DropHint({ id, label }: { id: string; label: string }) {
 }
 
 function CardHeader({
+  seq,
   title,
   subtitle,
   expanded,
@@ -582,6 +585,7 @@ function CardHeader({
   attributes,
   listeners,
 }: {
+  seq: number;
   title: string;
   subtitle: string;
   expanded: boolean;
@@ -606,6 +610,9 @@ function CardHeader({
       >
         <GripIcon />
       </button>
+      <span className="seq-badge" title={`Order ${seq}`}>
+        {seq}
+      </span>
       <button
         type="button"
         className="builder-title-btn"
@@ -614,7 +621,7 @@ function CardHeader({
         title={`${title}. ${subtitle}`}
       >
         <span className="builder-title-line">
-          <span aria-hidden="true">{expanded ? '▾' : '▸'}</span>
+          <IconChevron open={expanded} />
           <span className="builder-title-label">{title}</span>
         </span>
         <span className="builder-subtitle">{subtitle}</span>
@@ -656,6 +663,7 @@ function CardHeader({
 }
 
 function SortableCharCard({
+  seq,
   row,
   expanded,
   disableUp,
@@ -665,6 +673,7 @@ function SortableCharCard({
   onRemove,
   onPatch,
 }: {
+  seq: number;
   row: CharRow;
   expanded: boolean;
   disableUp: boolean;
@@ -687,9 +696,10 @@ function SortableCharCard({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cardClassName(isOver, isDragging)}
+      className={cardClassName('tone-char', isOver, isDragging)}
     >
       <CardHeader
+        seq={seq}
         title={title}
         subtitle={propertiesSubtitle(row.data)}
         expanded={expanded}
@@ -746,6 +756,7 @@ function SortableCharCard({
 }
 
 function SortableServiceCard({
+  seq,
   row,
   expanded,
   disableUp,
@@ -759,6 +770,7 @@ function SortableServiceCard({
   onRemoveChar,
   onMoveChar,
 }: {
+  seq: number;
   row: ServiceRow;
   expanded: Set<string>;
   disableUp: boolean;
@@ -784,9 +796,10 @@ function SortableServiceCard({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cardClassName(isOver, isDragging)}
+      className={cardClassName('tone-service', isOver, isDragging)}
     >
       <CardHeader
+        seq={seq}
         title={serviceTitle(row)}
         subtitle={serviceSubtitle(row)}
         expanded={open}
@@ -827,14 +840,21 @@ function SortableServiceCard({
           <div className="builder-nested">
             <div className="row">
               <h2>Characteristics</h2>
-              <button type="button" className="btn btn-ghost" onClick={onAddChar}>
-                + Add characteristic
+              <button
+                type="button"
+                className="btn btn-primary icon-btn"
+                aria-label="Add characteristic"
+                title="Add characteristic"
+                onClick={onAddChar}
+              >
+                <IconAdd />
               </button>
             </div>
             <SortableContext items={charIds} strategy={verticalListSortingStrategy}>
               {row.characteristics.map((characteristic, index) => (
                 <SortableCharCard
                   key={characteristic.localId}
+                  seq={index + 1}
                   row={characteristic}
                   expanded={expanded.has(charSortableId(characteristic.localId))}
                   disableUp={index === 0}
@@ -857,6 +877,7 @@ function SortableServiceCard({
 }
 
 function SortableTransitionCard({
+  seq,
   row,
   states,
   expanded,
@@ -867,6 +888,7 @@ function SortableTransitionCard({
   onRemove,
   onPatch,
 }: {
+  seq: number;
   row: TransitionRow;
   states: StateMachineStateRow[];
   expanded: boolean;
@@ -910,9 +932,10 @@ function SortableTransitionCard({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cardClassName(isOver, isDragging)}
+      className={cardClassName('tone-transition', isOver, isDragging)}
     >
       <CardHeader
+        seq={seq}
         title={title}
         subtitle={triggerPlain(row.data)}
         expanded={expanded}
@@ -993,6 +1016,7 @@ function SortableTransitionCard({
 }
 
 function SortableStateCard({
+  seq,
   row,
   states,
   isInitial,
@@ -1010,6 +1034,7 @@ function SortableStateCard({
   onRemoveTransition,
   onMoveTransition,
 }: {
+  seq: number;
   row: StateMachineStateRow;
   states: StateMachineStateRow[];
   isInitial: boolean;
@@ -1038,9 +1063,10 @@ function SortableStateCard({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cardClassName(isOver, isDragging)}
+      className={cardClassName('tone-state', isOver, isDragging)}
     >
       <CardHeader
+        seq={seq}
         title={stateTitle(row)}
         subtitle={stateSubtitle(row)}
         expanded={open}
@@ -1081,14 +1107,21 @@ function SortableStateCard({
           <div className="builder-nested">
             <div className="row">
               <h2>Transitions</h2>
-              <button type="button" className="btn btn-ghost" onClick={onAddTransition}>
-                + Add transition
+              <button
+                type="button"
+                className="btn btn-primary icon-btn"
+                aria-label="Add transition"
+                title="Add transition"
+                onClick={onAddTransition}
+              >
+                <IconAdd />
               </button>
             </div>
             <SortableContext items={transIds} strategy={verticalListSortingStrategy}>
               {row.transitions.map((item, index) => (
                 <SortableTransitionCard
                   key={item.localId}
+                  seq={index + 1}
                   row={item}
                   states={states}
                   expanded={expanded.has(transitionSortableId(item.localId))}
@@ -1145,6 +1178,11 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
   const [smInitial, setSmInitial] = useState(smParsed.initial);
   const [smRows, setSmRows] = useState<StateMachineStateRow[]>(smParsed.rows);
   const [expanded, setExpanded] = useState<Set<string>>(() => initialExpanded(initial.rows, smParsed.rows));
+  const [pendingRemove, setPendingRemove] = useState<{
+    title: string;
+    message: string;
+    apply: () => void;
+  } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const advertisingSeedRef = useRef(initial.doc.advertising);
   const serviceRowsRef = useRef(serviceRows);
@@ -1264,6 +1302,31 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
       return next;
     });
   }
+
+  function collectServiceIds(): string[] {
+    const ids: string[] = [];
+    for (const service of serviceRows) {
+      ids.push(serviceSortableId(service.localId));
+      for (const characteristic of service.characteristics) ids.push(charSortableId(characteristic.localId));
+    }
+    return ids;
+  }
+
+  function collectStateIds(): string[] {
+    const ids: string[] = [];
+    for (const state of smRows) {
+      ids.push(stateSortableId(state.localId));
+      for (const transition of state.transitions) ids.push(transitionSortableId(transition.localId));
+    }
+    return ids;
+  }
+
+  function sectionIsOpen(ids: string[]): boolean {
+    return ids.length > 0 && ids.every((id) => expanded.has(id));
+  }
+
+  const servicesOpen = sectionIsOpen(collectServiceIds());
+  const statesOpen = sectionIsOpen(collectStateIds());
 
   function relocateChar(activeDragId: string, overId: string) {
     const snap = dragSnapshotRef.current;
@@ -1454,16 +1517,16 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
   function removeService(localId: string) {
     const row = serviceRows.find((item) => item.localId === localId);
     if (!row) return;
-    if (
-      row.characteristics.length > 0 &&
-      !confirmRemove(serviceTitle(row), row.characteristics.length, 'characteristic', 'characteristics')
-    ) {
-      return;
-    }
-    const next = serviceRows.filter((item) => item.localId !== localId);
-    serviceRowsRef.current = next;
-    setServiceRows(next);
-    pushDoc(root, next, advertising, smInitial, smRows);
+    setPendingRemove({
+      title: 'Remove service',
+      message: removeMessage(serviceTitle(row), row.characteristics.length, 'characteristic', 'characteristics'),
+      apply: () => {
+        const next = serviceRows.filter((item) => item.localId !== localId);
+        serviceRowsRef.current = next;
+        setServiceRows(next);
+        pushDoc(root, next, advertising, smInitial, smRows);
+      },
+    });
   }
 
   function addService() {
@@ -1521,14 +1584,26 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
   }
 
   function removeChar(serviceLocalId: string, charLocalId: string) {
-    const next = serviceRows.map((row) =>
-      row.localId === serviceLocalId
-        ? { ...row, characteristics: row.characteristics.filter((characteristic) => characteristic.localId !== charLocalId) }
-        : row
-    );
-    serviceRowsRef.current = next;
-    setServiceRows(next);
-    pushDoc(root, next, advertising, smInitial, smRows);
+    const service = serviceRows.find((row) => row.localId === serviceLocalId);
+    const characteristic = service?.characteristics.find((item) => item.localId === charLocalId);
+    if (!characteristic) return;
+    setPendingRemove({
+      title: 'Remove characteristic',
+      message: `Remove "${charTitle(characteristic)}"?`,
+      apply: () => {
+        const next = serviceRows.map((row) =>
+          row.localId === serviceLocalId
+            ? {
+                ...row,
+                characteristics: row.characteristics.filter((item) => item.localId !== charLocalId),
+              }
+            : row
+        );
+        serviceRowsRef.current = next;
+        setServiceRows(next);
+        pushDoc(root, next, advertising, smInitial, smRows);
+      },
+    });
   }
 
   function moveService(localId: string, delta: MoveDelta) {
@@ -1569,12 +1644,16 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
   function removeSmState(localId: string) {
     const removed = smRows.find((row) => row.localId === localId);
     if (!removed) return;
-    if (
-      removed.transitions.length > 0 &&
-      !confirmRemove(stateTitle(removed), removed.transitions.length, 'transition', 'transitions')
-    ) {
-      return;
-    }
+    setPendingRemove({
+      title: 'Remove state',
+      message: removeMessage(stateTitle(removed), removed.transitions.length, 'transition', 'transitions'),
+      apply: () => applyRemoveSmState(localId),
+    });
+  }
+
+  function applyRemoveSmState(localId: string) {
+    const removed = smRows.find((row) => row.localId === localId);
+    if (!removed) return;
     const next = smRows.filter((row) => row.localId !== localId);
     smRowsRef.current = next;
     setSmRows(next);
@@ -1658,14 +1737,23 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
   }
 
   function removeSmTransition(stateLocalId: string, transLocalId: string) {
-    const next = smRows.map((row) =>
-      row.localId === stateLocalId
-        ? { ...row, transitions: row.transitions.filter((item) => item.localId !== transLocalId) }
-        : row
-    );
-    smRowsRef.current = next;
-    setSmRows(next);
-    pushDoc(root, serviceRows, advertising, smInitial, next);
+    const state = smRows.find((row) => row.localId === stateLocalId);
+    const transition = state?.transitions.find((item) => item.localId === transLocalId);
+    if (!transition) return;
+    setPendingRemove({
+      title: 'Remove transition',
+      message: `Remove "${transitionTitle(transition)}"?`,
+      apply: () => {
+        const next = smRows.map((row) =>
+          row.localId === stateLocalId
+            ? { ...row, transitions: row.transitions.filter((item) => item.localId !== transLocalId) }
+            : row
+        );
+        smRowsRef.current = next;
+        setSmRows(next);
+        pushDoc(root, serviceRows, advertising, smInitial, next);
+      },
+    });
   }
 
   function moveState(localId: string, delta: MoveDelta) {
@@ -1690,58 +1778,63 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
 
   return (
     <div className="profile-builder">
-      <p className="builder-help">
-        Open a card to edit it. Drag the grip to reorder, or drop a characteristic on another service to move
-        it — transitions move between states the same way. Up and Down work too. Advanced fields stay in the JSON tab.
-      </p>
-      <div className="card">
-        <h2>Device</h2>
-        <div className="field">
-          <label htmlFor="bd-id">Profile id</label>
-          <input id="bd-id" value={String(root.id ?? '')} onChange={(e) => patchRoot({ id: e.target.value })} />
+      <section className="builder-panel panel-device">
+        <header className="builder-panel-head">
+          <h2>Device</h2>
+          <p>Identity and the name a phone sees while scanning.</p>
+        </header>
+        <div className="builder-panel-body">
+          <div className="field-grid cols-3">
+            <div className="field">
+              <label htmlFor="bd-id">Profile id</label>
+              <input id="bd-id" value={String(root.id ?? '')} onChange={(e) => patchRoot({ id: e.target.value })} />
+            </div>
+            <div className="field">
+              <label htmlFor="bd-name">Name</label>
+              <input
+                id="bd-name"
+                value={String(root.name ?? '')}
+                onChange={(e) => patchRoot({ name: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="bd-ver">Version</label>
+              <input
+                id="bd-ver"
+                value={String(root.version ?? '')}
+                onChange={(e) => patchRoot({ version: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="field-grid">
+            <div className="field">
+              <label htmlFor="bd-adv-name">Advertising local name</label>
+              <input
+                id="bd-adv-name"
+                value={advertising.localName}
+                onChange={(e) => patchAdvertising({ localName: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="bd-adv-dev">Device name (optional)</label>
+              <input
+                id="bd-adv-dev"
+                value={advertising.deviceName}
+                onChange={(e) => patchAdvertising({ deviceName: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="bd-desc">Description</label>
+            <textarea
+              id="bd-desc"
+              rows={2}
+              value={String(root.description ?? '')}
+              onChange={(e) => patchRoot({ description: e.target.value })}
+            />
+          </div>
         </div>
-        <div className="field">
-          <label htmlFor="bd-name">Name</label>
-          <input
-            id="bd-name"
-            value={String(root.name ?? '')}
-            onChange={(e) => patchRoot({ name: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="bd-ver">Version</label>
-          <input
-            id="bd-ver"
-            value={String(root.version ?? '')}
-            onChange={(e) => patchRoot({ version: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="bd-desc">Description</label>
-          <textarea
-            id="bd-desc"
-            rows={2}
-            value={String(root.description ?? '')}
-            onChange={(e) => patchRoot({ description: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="bd-adv-name">Advertising local name</label>
-          <input
-            id="bd-adv-name"
-            value={advertising.localName}
-            onChange={(e) => patchAdvertising({ localName: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="bd-adv-dev">Advertising device name (optional)</label>
-          <input
-            id="bd-adv-dev"
-            value={advertising.deviceName}
-            onChange={(e) => patchAdvertising({ deviceName: e.target.value })}
-          />
-        </div>
-      </div>
+      </section>
       <DndContext
         sensors={sensors}
         collisionDetection={builderCollision}
@@ -1751,44 +1844,54 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
         onDragEnd={onDragEnd}
         onDragCancel={onDragCancel}
       >
-        <div className="builder-section-head">
-          <h2>State machine</h2>
-          <button type="button" className="btn btn-primary" onClick={addSmState}>
-            + Add state
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={expandAllStates} disabled={smRows.length === 0}>
-            Expand all
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={collapseAllStates}
-            disabled={smRows.length === 0}
-          >
-            Collapse all
-          </button>
-        </div>
+        <section className="builder-panel panel-states">
+          <header className="builder-panel-head">
+            <h2>State machine</h2>
+            <p>Numbered order is the list order. The first matching transition wins.</p>
+            <div className="row">
+              <button
+                type="button"
+                className="btn btn-primary icon-btn"
+                aria-label="Add state"
+                title="Add state"
+                onClick={addSmState}
+              >
+                <IconAdd />
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost icon-btn"
+                aria-label={statesOpen ? 'Collapse all' : 'Expand all'}
+                title={statesOpen ? 'Collapse all' : 'Expand all'}
+                aria-pressed={statesOpen}
+                onClick={statesOpen ? collapseAllStates : expandAllStates}
+                disabled={smRows.length === 0}
+              >
+                {statesOpen ? <IconCollapse /> : <IconExpand />}
+              </button>
+            </div>
+          </header>
+          <div className="builder-panel-body">
         {smRows.length === 0 ? (
           <p className="muted">No states yet. Add a state to include a state machine in this profile.</p>
         ) : (
           <>
-            <div className="card">
-              <div className="field">
-                <label htmlFor="bd-sm-initial">Initial state id</label>
-                <select id="bd-sm-initial" value={smInitial} onChange={(e) => setInitialState(e.target.value)}>
-                  {smRows.map((row) => (
-                    <option key={row.localId} value={row.stateKey}>
-                      {stateOptionLabel(row)}
-                    </option>
-                  ))}
-                  {!initialKnown && <option value={smInitial}>{smInitial || '(empty)'}</option>}
-                </select>
-              </div>
+            <div className="field field-narrow">
+              <label htmlFor="bd-sm-initial">Start state</label>
+              <select id="bd-sm-initial" value={smInitial} onChange={(e) => setInitialState(e.target.value)}>
+                {smRows.map((row) => (
+                  <option key={row.localId} value={row.stateKey}>
+                    {stateOptionLabel(row)}
+                  </option>
+                ))}
+                {!initialKnown && <option value={smInitial}>{smInitial || '(empty)'}</option>}
+              </select>
             </div>
             <SortableContext items={stateIds} strategy={verticalListSortingStrategy}>
               {smRows.map((row, index) => (
                 <SortableStateCard
                   key={row.localId}
+                  seq={index + 1}
                   row={row}
                   states={smRows}
                   isInitial={row.stateKey === smInitial}
@@ -1810,28 +1913,36 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
             </SortableContext>
           </>
         )}
-        <div className="builder-section-head">
-          <h2>Services</h2>
-          <button type="button" className="btn btn-primary" onClick={addService}>
-            + Add service
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={expandAllServices}
-            disabled={serviceRows.length === 0}
-          >
-            Expand all
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={collapseAllServices}
-            disabled={serviceRows.length === 0}
-          >
-            Collapse all
-          </button>
-        </div>
+          </div>
+        </section>
+        <section className="builder-panel panel-services">
+          <header className="builder-panel-head">
+            <h2>Services</h2>
+            <p>Numbered order is GATT registration order. The first service is advertised unless advertising UUIDs are set. Characteristics are used by UUID.</p>
+            <div className="row">
+              <button
+                type="button"
+                className="btn btn-primary icon-btn"
+                aria-label="Add service"
+                title="Add service"
+                onClick={addService}
+              >
+                <IconAdd />
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost icon-btn"
+                aria-label={servicesOpen ? 'Collapse all' : 'Expand all'}
+                title={servicesOpen ? 'Collapse all' : 'Expand all'}
+                aria-pressed={servicesOpen}
+                onClick={servicesOpen ? collapseAllServices : expandAllServices}
+                disabled={serviceRows.length === 0}
+              >
+                {servicesOpen ? <IconCollapse /> : <IconExpand />}
+              </button>
+            </div>
+          </header>
+          <div className="builder-panel-body">
         {serviceRows.length === 0 ? (
           <p className="muted">No services yet. Add a service to define GATT characteristics.</p>
         ) : (
@@ -1839,6 +1950,7 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
             {serviceRows.map((row, index) => (
               <SortableServiceCard
                 key={row.localId}
+                seq={index + 1}
                 row={row}
                 expanded={expanded}
                 disableUp={index === 0}
@@ -1855,6 +1967,8 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
             ))}
           </SortableContext>
         )}
+          </div>
+        </section>
         <DragOverlay>
           {overlay ? (
             <div className="builder-overlay">
@@ -1864,6 +1978,17 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
           ) : null}
         </DragOverlay>
       </DndContext>
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title={pendingRemove?.title ?? 'Remove'}
+        message={pendingRemove?.message ?? ''}
+        confirmLabel="Remove"
+        onCancel={() => setPendingRemove(null)}
+        onConfirm={() => {
+          pendingRemove?.apply();
+          setPendingRemove(null);
+        }}
+      />
     </div>
   );
 }

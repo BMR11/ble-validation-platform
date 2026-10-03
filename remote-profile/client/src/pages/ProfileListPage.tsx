@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProfiles, type StoredProfile } from '../api';
 import { useAuth } from '../auth';
+import { IconAdd } from '../components/actionIcons';
 
 function isFullProfile(p: unknown): p is StoredProfile {
   return (
@@ -42,8 +43,8 @@ export default function ProfileListPage() {
       <div className="topbar">
         <h1>Profiles</h1>
         <div className="row">
-          <Link to="/new" className="btn btn-primary">
-            New profile
+          <Link to="/new" className="btn btn-primary icon-btn" aria-label="New profile" title="New profile">
+            <IconAdd />
           </Link>
           <button type="button" className="btn btn-ghost" onClick={logout}>
             Log out

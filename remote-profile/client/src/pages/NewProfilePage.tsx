@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createProfile } from '../api';
 import { useAuth } from '../auth';
+import { IconAdd, IconSpinner } from '../components/actionIcons';
 import ProfileDragDropBuilder from '../components/ProfileDragDropBuilder';
 
 const EMPTY_DOC = `{
@@ -159,8 +160,14 @@ export default function NewProfilePage() {
             />
           )}
         </div>
-        <button type="submit" className="btn btn-primary" disabled={busy}>
-          {busy ? 'Creating…' : 'Create'}
+        <button
+          type="submit"
+          className="btn btn-primary icon-btn"
+          disabled={busy}
+          aria-label={busy ? 'Creating' : 'Create'}
+          title={busy ? 'Creating' : 'Create'}
+        >
+          {busy ? <IconSpinner /> : <IconAdd />}
         </button>
       </form>
     </div>

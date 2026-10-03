@@ -69,6 +69,45 @@ export function IconCancel() {
   );
 }
 
+export function IconAdd() {
+  return (
+    <Svg>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </Svg>
+  );
+}
+
+export function IconExpand() {
+  return (
+    <Svg>
+      <path d="M6 7l6 5 6-5" />
+      <path d="M6 13l6 5 6-5" />
+    </Svg>
+  );
+}
+
+export function IconCollapse() {
+  return (
+    <Svg>
+      <path d="M6 10l6-5 6 5" />
+      <path d="M6 16l6-5 6 5" />
+    </Svg>
+  );
+}
+
+export function IconChevron({ open }: { open: boolean }) {
+  return open ? (
+    <Svg>
+      <path d="M6 9l6 6 6-6" />
+    </Svg>
+  ) : (
+    <Svg>
+      <path d="M9 6l6 6-6 6" />
+    </Svg>
+  );
+}
+
 export function IconSpinner() {
   return (
     <Svg spin>
