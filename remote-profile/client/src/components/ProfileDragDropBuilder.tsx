@@ -22,6 +22,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { IconDown, IconRemove, IconUp } from './actionIcons';
 import {
   charSortableId,
   dragKind,
@@ -624,22 +625,30 @@ function CardHeader({
           type="button"
           className="btn btn-ghost builder-icon-btn"
           aria-label="Move up"
+          title="Move up"
           disabled={disableUp}
           onClick={onMoveUp}
         >
-          Up
+          <IconUp />
         </button>
         <button
           type="button"
           className="btn btn-ghost builder-icon-btn"
           aria-label="Move down"
+          title="Move down"
           disabled={disableDown}
           onClick={onMoveDown}
         >
-          Down
+          <IconDown />
         </button>
-        <button type="button" className="btn btn-ghost builder-icon-btn" onClick={onRemove}>
-          Remove
+        <button
+          type="button"
+          className="btn btn-ghost builder-icon-btn builder-icon-remove"
+          aria-label="Remove"
+          title="Remove"
+          onClick={onRemove}
+        >
+          <IconRemove />
         </button>
       </div>
     </div>

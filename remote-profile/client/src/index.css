@@ -299,10 +299,34 @@ button {
   margin-left: auto;
 }
 
+.icon-btn,
 .builder-icon-btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0.35rem;
+  line-height: 0;
+}
+
+.builder-icon-remove {
+  color: #f0c4c4;
+}
+
+.builder-icon-remove:hover {
+  color: #f6d4d4;
+  border-color: #6b3d3d;
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.icon-spin {
+  animation: icon-spin 0.8s linear infinite;
 }
 
 .builder-icon-btn:disabled {

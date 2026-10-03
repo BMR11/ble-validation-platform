@@ -8,6 +8,7 @@ import {
   type StoredProfile,
 } from '../api';
 import { useAuth } from '../auth';
+import { IconCancel, IconSave, IconSpinner } from '../components/actionIcons';
 import ProfileDragDropBuilder from '../components/ProfileDragDropBuilder';
 
 export default function ProfileEditPage() {
@@ -241,11 +242,22 @@ export default function ProfileEditPage() {
           )}
         </div>
         <div className="row">
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {busy ? 'Saving…' : 'Save'}
+          <button
+            type="submit"
+            className="btn btn-primary icon-btn"
+            disabled={busy}
+            aria-label={busy ? 'Saving' : 'Save'}
+            title={busy ? 'Saving' : 'Save'}
+          >
+            {busy ? <IconSpinner /> : <IconSave />}
           </button>
-          <Link className="btn btn-ghost" to={`/profiles/${encodeURIComponent(profileId)}`}>
-            Cancel
+          <Link
+            className="btn btn-ghost icon-btn"
+            to={`/profiles/${encodeURIComponent(profileId)}`}
+            aria-label="Cancel"
+            title="Cancel"
+          >
+            <IconCancel />
           </Link>
         </div>
       </form>
