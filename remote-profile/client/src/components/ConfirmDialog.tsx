@@ -21,6 +21,8 @@ export default function ConfirmDialog({
   onCancel,
 }: Props) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
 
   useEffect(() => {
     if (!open) return;
@@ -30,11 +32,11 @@ export default function ConfirmDialog({
   useEffect(() => {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCancel();
+      if (event.key === 'Escape') onCancelRef.current();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onCancel]);
+  }, [open]);
 
   if (!open) return null;
 

@@ -26,6 +26,8 @@ remote-profile/server/dist/
 remote-profile/client/dist/
 remote-profile/server/data/store.json
 
+remote-profile/scripts/.demo-out/
+
 # Logs and temp
 *.log
 *.tmp

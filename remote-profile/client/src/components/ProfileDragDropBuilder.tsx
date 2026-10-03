@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -1185,6 +1185,7 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
   } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const advertisingSeedRef = useRef(initial.doc.advertising);
+  const lastPushedJsonRef = useRef(docJson);
   const serviceRowsRef = useRef(serviceRows);
   const smRowsRef = useRef(smRows);
   const rootRef = useRef(root);
@@ -1206,12 +1207,41 @@ export default function ProfileDragDropBuilder({ docJson, onDocJsonChange }: Pro
       nextSmInitial: string,
       nextSmRows: StateMachineStateRow[]
     ) => {
-      onDocJsonChange(
-        emitDoc(nextRoot, nextRows, nextAdv, advertisingSeedRef.current, nextSmInitial, nextSmRows)
+      const nextJson = emitDoc(
+        nextRoot,
+        nextRows,
+        nextAdv,
+        advertisingSeedRef.current,
+        nextSmInitial,
+        nextSmRows
       );
+      lastPushedJsonRef.current = nextJson;
+      onDocJsonChange(nextJson);
     },
     [onDocJsonChange]
   );
+
+  useEffect(() => {
+    if (docJson === lastPushedJsonRef.current) return;
+    lastPushedJsonRef.current = docJson;
+    const doc = initial.doc;
+    const { services: _services, advertising: _advertising, stateMachine: _stateMachine, ...rest } = doc;
+    const sm = parseStateMachine(doc.stateMachine);
+    advertisingSeedRef.current = doc.advertising;
+    rootRef.current = rest;
+    setRoot(rest);
+    advertisingRef.current = initial.advertising;
+    setAdvertising(initial.advertising);
+    serviceRowsRef.current = initial.rows;
+    setServiceRows(initial.rows);
+    smInitialRef.current = sm.initial;
+    setSmInitial(sm.initial);
+    smRowsRef.current = sm.rows;
+    setSmRows(sm.rows);
+    setExpanded(initialExpanded(initial.rows, sm.rows));
+    setPendingRemove(null);
+    setActiveId(null);
+  }, [docJson, initial]);
   const pushDocRef = useRef(pushDoc);
   pushDocRef.current = pushDoc;
 
