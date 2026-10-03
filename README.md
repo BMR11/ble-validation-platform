@@ -201,6 +201,8 @@ These articles explain the **architecture, motivation, and real-world use cases*
 - **Central** (`central-app/`): user picks a demo target (heart rate vs Nordic LBS), scans by service UUID, connects, reads DIS into an expandable **Info** panel, discovers services, subscribes, writes LED for Nordic.
 - **Remote-profile** (`remote-profile/`): React admin UI (drag-and-drop visual builder and JSON editor) + Express API + JSON file store — see [remote-profile/README.md](remote-profile/README.md).
 
+![Dragging a characteristic between services in the profile builder](docs/media/remote-profile-builder.gif)
+
 More detail: [docs/architecture.md](docs/architecture.md).
 
 ## Folder structure

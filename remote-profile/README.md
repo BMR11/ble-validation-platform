@@ -83,6 +83,9 @@ Open a profile, then a version. The edit page has two parts:
 The builder is split into **Device**, **State machine**, and **Services**. A service contains characteristics. A state contains transitions. Borders and background tints show that nesting.
 
 - Drag the grip on a card to reorder it, or to move a characteristic into another service or a transition into another state. **Up** and **Down** do the same move inside one list.
+
+![Dragging Heart Rate Control Point from the Heart Rate service into Battery](../docs/media/remote-profile-builder.gif)
+
 - **Plus** adds a profile, version action, state, service, characteristic, or transition. **Trash** removes or deletes. Every remove and delete asks for confirmation before it runs.
 - Each section has one expand/collapse control. It expands every card in that section, then switches to collapse.
 
