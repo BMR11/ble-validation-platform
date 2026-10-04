@@ -6,7 +6,7 @@ This repository implements a **two-app BLE demo**:
 
 | App | Role | Library | Typical device |
 |-----|------|---------|----------------|
-| `peripheral-app/` | GATT server + advertiser | `rn-ble-peripheral-module` | **Android**, or **iOS** on a physical device. macOS uses the same CoreBluetooth provisioning (see [apple-peripheral.md](./apple-peripheral.md)). |
+| `peripheral-app/` | GATT server + advertiser | `rn-ble-peripheral-module` | **Android**, **iOS** on a physical device, or **macOS** via `react-native-macos` (`peripheral-app/macos`). See [apple-peripheral.md](./apple-peripheral.md). |
 | `central-app/` | Scanner + GATT client | `react-native-ble-manager` | **iOS or Android** |
 
 Behavior of the peripheral is driven by **JSON profiles**: bundled under [`profiles/local/`](../profiles/local/) and/or **fetched at runtime** from the [**remote-profile**](../remote-profile/) service (see [remote-profiles.md](./remote-profiles.md)). The admin UI edits those documents in a drag-and-drop visual builder or in JSON. TypeScript maps optional `valueGenerator` keys to concrete simulation blocks before the shared **profile engine** runs (migrated from `rn-ble-peripheral-module` example branch `test-pripheral-config-profile-mar23`).

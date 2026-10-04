@@ -64,6 +64,21 @@ Then run `central-app` on a second phone (iOS or Android), scan, and connect. Ba
 
 ## macOS
 
-A Mac’s `CBPeripheralManager` overrides `180F` and `180A` the same way. The Swift peripheral module is the code path for both platforms: the same alias and catalog are used if that module is built into a macOS host.
+`peripheral-app/macos` is a React Native macOS app (`react-native-macos` 0.79.4) that loads the same profile UI and the same CoreBluetooth peripheral module. Battery and Device Information use the vendor aliases above. The Mac target is sandboxed and includes the Bluetooth entitlement.
 
-This repo’s UI target is the iOS app (`peripheral-app/ios`). Running that UI as a Mac app needs a Mac and a `react-native-macos` target generated on macOS; it is not produced here. Advertising from an iPhone next to a Mac central is the supported Apple peripheral setup in this tree.
+Build it on a Mac with Xcode. This Linux environment cannot compile it.
+
+```bash
+cd peripheral-app
+npm install
+npm run pods:macos
+npm start
+```
+
+In another terminal:
+
+```bash
+npm run macos
+```
+
+`react-native-macos@0.79.4` declares a peer dependency on `react-native@0.79.6`. This app stays on `react-native@0.79.2`, which Yarn accepts with a peer warning. If the Mac build fails on that mismatch, align the peripheral app’s `react-native` version with `0.79.6` and reinstall pods.

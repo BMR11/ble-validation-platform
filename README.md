@@ -269,6 +269,8 @@ npm start
 npm run android
 # iOS physical device (Simulator cannot be a BLE peripheral)
 npm run ios -- --device
+# macOS (Xcode). Install pods once with: npm run pods:macos
+npm run macos
 ```
 
 On iOS and macOS, Battery (`180F`) and Device Information (`180A`) are published under a vendor UUID so the host device does not override them. Details: [docs/apple-peripheral.md](docs/apple-peripheral.md).

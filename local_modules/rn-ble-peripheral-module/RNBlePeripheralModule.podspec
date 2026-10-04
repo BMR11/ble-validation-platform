@@ -10,7 +10,15 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = { "local" => "local@localhost" }
 
-  s.platforms    = { :ios => min_ios_version_supported }
+  platforms = { :ios => min_ios_version_supported }
+  # macOS Podfiles load react-native-macos, which defines this helper.
+  # iOS Podfiles do not, so keep a fallback that still declares osx support.
+  if respond_to?(:min_macos_version_supported)
+    platforms[:osx] = min_macos_version_supported
+  else
+    platforms[:osx] = "10.15"
+  end
+  s.platforms    = platforms
   s.source       = { :path => "." }
 
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"

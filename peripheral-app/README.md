@@ -118,9 +118,19 @@ The iOS app is a BLE peripheral host. Run it on a **physical iPhone or iPad**. T
 
 iOS and macOS replace app-published **Battery (`180F`)** and **Device Information (`180A`)** with the host device’s own services. This app publishes those two services on a vendor UUID instead, and keeps the standard characteristic UUIDs. The central app discovers that alias. See [docs/apple-peripheral.md](../docs/apple-peripheral.md).
 
+iOS, on a physical device:
+
 ```sh
 npm run pi
 npm run ios -- --device
+```
+
+macOS (`react-native-macos`, Xcode required):
+
+```sh
+npm run pods:macos
+npm start
+npm run macos
 ```
 
 # Learning and Notes:
@@ -132,6 +142,7 @@ npm run ios -- --device
 1. `npm install`
 2. `npm run android` for Android
 3. `npm run ios` for iOS
+4. `npm run pods:macos` then `npm run macos` for macOS
 
 # ADB broadcast intents (optional)
 

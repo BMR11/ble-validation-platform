@@ -1,0 +1,5 @@
+# CocoaPods
+Pods/
+
+# Local Xcode node override
+.xcode.env.local
