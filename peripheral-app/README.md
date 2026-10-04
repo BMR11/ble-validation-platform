@@ -112,6 +112,17 @@ To learn more about React Native, take a look at the following resources:
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
 
+# iOS and macOS
+
+The iOS app is a BLE peripheral host. Run it on a **physical iPhone or iPad**. The Simulator does not provide a peripheral radio, so `CBPeripheralManager` reports that it is not powered on.
+
+iOS and macOS replace app-published **Battery (`180F`)** and **Device Information (`180A`)** with the host device’s own services. This app publishes those two services on a vendor UUID instead, and keeps the standard characteristic UUIDs. The central app discovers that alias. See [docs/apple-peripheral.md](../docs/apple-peripheral.md).
+
+```sh
+npm run pi
+npm run ios -- --device
+```
+
 # Learning and Notes:
 
 - When we run this on iOS simulator, it will throw "API MISUSE: <CBPeripheralManager: 0x6000039240d0> can only accept this command while in the powered on state" When we try to call any API from CBPeripheralManager because we have enabled Bluetooth for only macOS SandBox and this is not awailable on iOS Simulators. So we need to run it on a real iOS device

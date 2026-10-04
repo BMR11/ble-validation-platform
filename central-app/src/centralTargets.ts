@@ -3,7 +3,7 @@
  */
 
 import { Platform } from 'react-native';
-import { toFullUuid16, toShortUuid4 } from './uuid';
+import { toFullUuid16 } from './uuid';
 
 export type DemoTargetId = 'heart-rate-monitor' | 'nordic-lbs';
 const isiOS = Platform.OS === 'ios';
@@ -34,8 +34,9 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         measurement: toFullUuid16('2A37'),
       },
       battery: {
-        service: isiOS ? '180F' : toFullUuid16('180F'), // iOS needs short format; Android needs full 128-bit
-        level: isiOS ? '2A19' : toFullUuid16('2A19'),   // iOS needs short format; Android needs full 128-bit
+        // SIG UUID. Discovery switches to the Apple alias when that service is present.
+        service: isiOS ? '180F' : toFullUuid16('180F'),
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),
       },
     },
   },
@@ -52,8 +53,9 @@ export const DEMO_TARGETS: Record<DemoTargetId, DemoTarget> = {
         led: '00001525-1212-efde-1523-785feabcd123',
       },
       battery: {
-        service: isiOS ? '180F' : toFullUuid16('180F'), // iOS needs short format; Android needs full 128-bit
-        level: isiOS ? '2A19' : toFullUuid16('2A19'),   // iOS needs short format; Android needs full 128-bit
+        // SIG UUID. Discovery switches to the Apple alias when that service is present.
+        service: isiOS ? '180F' : toFullUuid16('180F'),
+        level: isiOS ? '2A19' : toFullUuid16('2A19'),
       },
     },
   },

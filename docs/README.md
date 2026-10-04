@@ -9,6 +9,7 @@ Use it to find the right level of detail without reading every file in order.
 - [Repository README](../README.md) — project overview, problem statement, setup, demo flow, and roadmap.
 - [Demo flows](./demo-flows.md) — end-to-end flows for Heart Rate, Nordic LBS, and optional error-state testing.
 - [Architecture](./architecture.md) — high-level view of the central app, peripheral app, profile engine, and BLE interaction.
+- [iOS and macOS peripheral](./apple-peripheral.md) — running the peripheral on Apple devices, and how Battery and Device Information avoid the system services.
 
 ## Understand profiles
 

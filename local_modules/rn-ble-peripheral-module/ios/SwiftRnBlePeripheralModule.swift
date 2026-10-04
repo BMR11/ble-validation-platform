@@ -35,6 +35,12 @@ import Foundation
     
     /// Map of central identifier to CBCentral for connection latency
     private var connectedCentrals = [String: CBCentral]()
+
+    /// SIG short id → vendor UUID for Battery / Device Information on Apple hosts.
+    private var appleProvisionedServices = [String: String]()
+
+    /// UTF-8 JSON body of the provisioning catalog characteristic.
+    private var catalogPayload = Data()
     
     /// Local name for advertising
     var name: String = "RN_BLE"
@@ -70,7 +76,7 @@ import Foundation
         _ resolve: @escaping RCTPromiseResolveBlock,
         rejecter reject: @escaping RCTPromiseRejectBlock
     ) {
-        if #available(iOS 13.0, *) {
+        if #available(iOS 13.0, macOS 10.15, *) {
             resolve(CBPeripheralManager.authorization.rawValue)
         } else {
             // Prior to iOS 13, if we got here, we're authorized
@@ -120,9 +126,12 @@ import Foundation
                 advertisementData[CBAdvertisementDataLocalNameKey] = name
             }
             
-            // Set service UUIDs if provided
+            // Set service UUIDs if provided. System-owned Battery / DIS UUIDs
+            // are rewritten to the vendor alias that was actually published.
             if let serviceUUIDs = options["serviceUUIDs"] as? [String] {
-                let uuids = serviceUUIDs.map { CBUUID(string: $0) }
+                let uuids = serviceUUIDs.map {
+                    CBUUID(string: AppleGattProvisioning.publishedUuid(for: $0))
+                }
                 advertisementData[CBAdvertisementDataServiceUUIDsKey] = uuids
             } else {
                 // Use all registered services
@@ -133,6 +142,8 @@ import Foundation
             advertisementData[CBAdvertisementDataLocalNameKey] = name
             advertisementData[CBAdvertisementDataServiceUUIDsKey] = getServiceUUIDArray()
         }
+
+        ensureAppleProvisioningCatalog()
 
          for (uuid, service) in servicesMap {
             // Only add if not already added (check by trying to find it)
@@ -156,12 +167,21 @@ import Foundation
     /// Add a service to the peripheral
     @objc(addService:primary:)
     public func addService(_ uuid: String, primary: Bool) {
-        let serviceUUID = CBUUID(string: uuid)
+        let publishedUuid = AppleGattProvisioning.publishedUuid(for: uuid)
+        let serviceUUID = CBUUID(string: publishedUuid)
         
         // Check if service already exists
         if servicesMap[uuid] != nil {
             emitLog("Service \(uuid) already exists")
             return
+        }
+
+        if AppleGattProvisioning.isOwnedSigService(uuid),
+           let short = AppleGattProvisioning.sigShortId(uuid) {
+            appleProvisionedServices[short] = publishedUuid
+            emitLog(
+                "Apple GATT: \(uuid) is owned by iOS/macOS. Publishing \(publishedUuid) so Battery or Device Information values are not replaced by the host device."
+            )
         }
         
         let service = CBMutableService(type: serviceUUID, primary: primary)
@@ -200,6 +220,13 @@ import Foundation
                 characteristicsMap.removeValue(forKey: char.uuid.uuidString)
             }
         }
+
+        if let short = AppleGattProvisioning.sigShortId(uuid) {
+            appleProvisionedServices.removeValue(forKey: short)
+        }
+        if appleProvisionedServices.isEmpty {
+            removeAppleProvisioningCatalog()
+        }
         
         emitLog("Removed service: \(uuid)")
     }
@@ -209,6 +236,8 @@ import Foundation
         manager.removeAllServices()
         servicesMap.removeAll()
         characteristicsMap.removeAll()
+        appleProvisionedServices.removeAll()
+        catalogPayload = Data()
         emitLog("Removed all services")
     }
     
@@ -380,21 +409,21 @@ import Foundation
     
     /// Publish an L2CAP channel
     @objc public func publishL2CAPChannel(_ withEncryption: Bool) {
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, macOS 10.13, *) {
             manager.publishL2CAPChannel(withEncryption: withEncryption)
             emitLog("Publishing L2CAP channel with encryption: \(withEncryption)")
         } else {
-            emitLog("L2CAP channels require iOS 11+")
+            emitLog("L2CAP channels require iOS 11+ or macOS 10.13+")
         }
     }
     
     /// Unpublish an L2CAP channel
     @objc public func unpublishL2CAPChannel(_ psm: UInt16) {
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, macOS 10.13, *) {
             manager.unpublishL2CAPChannel(psm)
             emitLog("Unpublishing L2CAP channel with PSM: \(psm)")
         } else {
-            emitLog("L2CAP channels require iOS 11+")
+            emitLog("L2CAP channels require iOS 11+ or macOS 10.13+")
         }
     }
     
@@ -451,7 +480,7 @@ import Foundation
     /// Called when the peripheral manager's state changes
     public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         let stateDescription: String
-        if #available(iOS 10.0, *) {
+        if #available(iOS 10.0, macOS 10.13, *) {
             stateDescription = peripheral.state.description
         } else {
             stateDescription = "State: \(peripheral.state.rawValue)"
@@ -583,6 +612,11 @@ import Foundation
         _ peripheral: CBPeripheralManager,
         didReceiveRead request: CBATTRequest
     ) {
+        if request.characteristic.uuid == CBUUID(string: AppleGattProvisioning.catalogCharacteristicUUID) {
+            respondToCatalogRead(request)
+            return
+        }
+
         let requestId = nextRequestId
         nextRequestId += 1
         
@@ -732,8 +766,8 @@ import Foundation
         ])
     }
     
-    /// Called when L2CAP channel is published (iOS 11+)
-    @available(iOS 11.0, *)
+    /// Called when L2CAP channel is published (iOS 11+ / macOS 10.13+)
+    @available(iOS 11.0, macOS 10.13, *)
     public func peripheralManager(
         _ peripheral: CBPeripheralManager,
         didPublishL2CAPChannel PSM: CBL2CAPPSM,
@@ -755,8 +789,8 @@ import Foundation
         }
     }
     
-    /// Called when L2CAP channel is unpublished (iOS 11+)
-    @available(iOS 11.0, *)
+    /// Called when L2CAP channel is unpublished (iOS 11+ / macOS 10.13+)
+    @available(iOS 11.0, macOS 10.13, *)
     public func peripheralManager(
         _ peripheral: CBPeripheralManager,
         didUnpublishL2CAPChannel PSM: CBL2CAPPSM,
@@ -778,8 +812,8 @@ import Foundation
         }
     }
     
-    /// Called when L2CAP channel is opened (iOS 11+)
-    @available(iOS 11.0, *)
+    /// Called when L2CAP channel is opened (iOS 11+ / macOS 10.13+)
+    @available(iOS 11.0, macOS 10.13, *)
     public func peripheralManager(
         _ peripheral: CBPeripheralManager,
         didOpen channel: CBL2CAPChannel?,
@@ -805,9 +839,64 @@ import Foundation
     
     // MARK: - Helper Methods
     
-    /// Get array of all service UUIDs
+    /// Get array of all service UUIDs, excluding the provisioning catalog.
     private func getServiceUUIDArray() -> [CBUUID] {
-        return servicesMap.values.map { $0.uuid }
+        return servicesMap.compactMap { key, service in
+            if key.caseInsensitiveCompare(AppleGattProvisioning.catalogServiceUUID) == .orderedSame {
+                return nil
+            }
+            return service.uuid
+        }
+    }
+
+    /// Publish a read-only map of SIG service → vendor UUID for nRF Connect and other centrals.
+    private func ensureAppleProvisioningCatalog() {
+        guard !appleProvisionedServices.isEmpty else {
+            return
+        }
+        if servicesMap[AppleGattProvisioning.catalogServiceUUID] != nil {
+            return
+        }
+
+        let json = AppleGattProvisioning.catalogJson(appleProvisionedServices)
+        catalogPayload = Data(json.utf8)
+
+        let characteristic = CBMutableCharacteristic(
+            type: CBUUID(string: AppleGattProvisioning.catalogCharacteristicUUID),
+            properties: [.read],
+            value: catalogPayload,
+            permissions: [.readable]
+        )
+        let service = CBMutableService(
+            type: CBUUID(string: AppleGattProvisioning.catalogServiceUUID),
+            primary: true
+        )
+        service.characteristics = [characteristic]
+        servicesMap[AppleGattProvisioning.catalogServiceUUID] = service
+        characteristicsMap[AppleGattProvisioning.catalogCharacteristicUUID] = characteristic
+        emitLog("Apple GATT catalog \(AppleGattProvisioning.catalogServiceUUID): \(json)")
+    }
+
+    private func removeAppleProvisioningCatalog() {
+        guard let service = servicesMap[AppleGattProvisioning.catalogServiceUUID] else {
+            catalogPayload = Data()
+            return
+        }
+        manager.remove(service)
+        servicesMap.removeValue(forKey: AppleGattProvisioning.catalogServiceUUID)
+        characteristicsMap.removeValue(forKey: AppleGattProvisioning.catalogCharacteristicUUID)
+        catalogPayload = Data()
+    }
+
+    private func respondToCatalogRead(_ request: CBATTRequest) {
+        let payload = catalogPayload
+        if request.offset > payload.count {
+            manager.respond(to: request, withResult: .invalidOffset)
+            return
+        }
+        request.value = payload.subdata(in: request.offset..<payload.count)
+        manager.respond(to: request, withResult: .success)
+        emitLog("Responded to Apple GATT catalog read")
     }
     
     /// Emit a log message to JavaScript (for debugging)
@@ -824,7 +913,7 @@ import Foundation
 
 // MARK: - CBManagerState Extension for Description
 
-@available(iOS 10.0, *)
+@available(iOS 10.0, macOS 10.13, *)
 extension CBManagerState: @retroactive CustomStringConvertible {
     public var description: String {
         switch self {
