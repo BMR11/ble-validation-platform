@@ -254,7 +254,7 @@ Requirements: **Node 18+**, **JDK 17** (for Android), Xcode + CocoaPods for iOS 
 
    Optional **`server/.env`** only overrides `PORT` / `HOST`. Login: `demo@example.com` / `demo123` (public demo only — see [docs/remote-profiles.md](docs/remote-profiles.md)).
 
-4. **iOS (central only, or peripheral if you add iOS usage)**
+4. **iOS** (central, and peripheral on a physical device — see [docs/apple-peripheral.md](docs/apple-peripheral.md))
 
    ```bash
    cd central-app/ios && bundle install && bundle exec pod install && cd ../..
@@ -267,7 +267,11 @@ cd peripheral-app
 npm start
 # Android (separate terminal)
 npm run android
+# iOS physical device (Simulator cannot be a BLE peripheral)
+npm run ios -- --device
 ```
+
+On iOS and macOS, Battery (`180F`) and Device Information (`180A`) are published under a vendor UUID so the host device does not override them. Details: [docs/apple-peripheral.md](docs/apple-peripheral.md).
 
 Flow:
 

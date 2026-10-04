@@ -1,7 +1,6 @@
-import { Platform } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import type { PeripheralInfo } from 'react-native-ble-manager';
-import { normUuid, toFullUuid16, uuidShort16 } from './uuid';
+import { gattAccessAttempts } from './discoveredGatt';
 
 /** Standard DIS (0x180A) characteristics — same set as `ProfileDeviceInfo` in peripheral profiles. */
 const DIS_FIELDS: readonly { readonly label: string; readonly short: string }[] = [
@@ -13,65 +12,15 @@ const DIS_FIELDS: readonly { readonly label: string; readonly short: string }[] 
   { label: 'Software revision', short: '2A28' },
 ];
 
-function findDiscoveredPair(
-  info: PeripheralInfo,
-  shortChar: string
-): { service: string; characteristic: string } | null {
-  const wantChar = normUuid(shortChar).padStart(4, '0').slice(-4);
-  for (const c of info.characteristics ?? []) {
-    const svc = c.service;
-    const ch = c.characteristic;
-    if (!svc || !ch) {
-      continue;
-    }
-    if (uuidShort16(svc) !== '180a') {
-      continue;
-    }
-    if (uuidShort16(ch) !== wantChar) {
-      continue;
-    }
-    return { service: svc, characteristic: ch };
-  }
-  return null;
-}
-
-function pushUnique(
-  out: { service: string; characteristic: string }[],
-  seen: Set<string>,
-  service: string,
-  characteristic: string
-): void {
-  const key = `${normUuid(service)}|${normUuid(characteristic)}`;
-  if (seen.has(key)) {
-    return;
-  }
-  seen.add(key);
-  out.push({ service, characteristic });
-}
-
 /**
- * Order matters: try discovery-derived UUIDs first (native stack format), then common alternates.
+ * Stay on the discovered service. On an Apple peripheral that service is the
+ * vendor alias; falling back to SIG 180A would read the host's Device Information.
  */
 function readAttemptsForCharacteristic(
-  discovered: { service: string; characteristic: string } | null,
+  info: PeripheralInfo,
   short: string
 ): { service: string; characteristic: string }[] {
-  const seen = new Set<string>();
-  const out: { service: string; characteristic: string }[] = [];
-  if (discovered) {
-    pushUnique(out, seen, discovered.service, discovered.characteristic);
-  }
-  const fullS = toFullUuid16('180A');
-  const fullC = toFullUuid16(short);
-  if (Platform.OS === 'ios') {
-    pushUnique(out, seen, '180A', short);
-    pushUnique(out, seen, fullS, short);
-    pushUnique(out, seen, '180A', fullC);
-    pushUnique(out, seen, fullS, fullC);
-  } else {
-    pushUnique(out, seen, fullS, fullC);
-  }
-  return out;
+  return gattAccessAttempts(info, '180A', short);
 }
 
 function bytesToUtf8(bytes: number[]): string {
@@ -108,8 +57,7 @@ async function readDisCharacteristic(
   info: PeripheralInfo,
   short: string
 ): Promise<number[] | null> {
-  const discovered = findDiscoveredPair(info, short);
-  const attempts = readAttemptsForCharacteristic(discovered, short);
+  const attempts = readAttemptsForCharacteristic(info, short);
   for (const { service, characteristic } of attempts) {
     try {
       const raw = await BleManager.read(peripheralId, service, characteristic);

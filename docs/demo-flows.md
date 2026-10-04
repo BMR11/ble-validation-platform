@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-- Two BLE-capable devices (or one phone + one tablet), **or** one central device and one Android peripheral.
-- **Peripheral**: `peripheral-app` targets **Android** (`rn-ble-peripheral-module` peripheral APIs).
-- **Central**: `central-app` on **iOS or Android** with Bluetooth enabled.
+- Two BLE-capable devices (or one phone + one tablet).
+- **Peripheral**: `peripheral-app` on **Android**, or on a **physical iPhone/iPad**. The iOS Simulator cannot advertise. On Apple hosts, Battery and Device Information are published on vendor UUIDs so the OS does not replace them — see [apple-peripheral.md](./apple-peripheral.md).
+- **Central**: `central-app` on **iOS or Android** with Bluetooth enabled. It discovers either the standard Battery/DIS UUIDs or the Apple aliases.
 - Repo paths: install JS deps in **each** app folder (`peripheral-app`, `central-app`).
 
 ## Flow A — Heart rate profile

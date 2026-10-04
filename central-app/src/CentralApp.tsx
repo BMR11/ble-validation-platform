@@ -15,7 +15,9 @@ import BleManager, { BleScanMode } from 'react-native-ble-manager';
 import type { Peripheral } from 'react-native-ble-manager';
 import { DEMO_TARGETS, type DemoTargetId } from './centralTargets';
 import { HeartRateGraph } from './components/HeartRateGraph';
+import { type DiscoveredGatt, gattAccessAttempts } from './discoveredGatt';
 import { readDeviceInformationService } from './disRead';
+import { sameGattUuid } from '../../shared/appleGattProvisioning';
 import { normUuid, uuidShort16 } from './uuid';
 
 /** Unicode U+1F4A1 — same bulb as peripheral-app ProfileApp. */
@@ -193,6 +195,8 @@ export default function CentralApp() {
   /** Numeric BPM for HR graph; null when unknown or disconnected. */
   const [hrBpm, setHrBpm] = useState<number | null>(null);
   const [batteryLine, setBatteryLine] = useState<string>('--');
+  /** Service we subscribed for Battery Level. Ignores the host's system 180F. */
+  const batteryServiceRef = useRef<string | null>(null);
   const [buttonLine, setButtonLine] = useState<string>('--');
   /** Last known LED on peripheral (read on connect + updated after writes). */
   const [ledLit, setLedLit] = useState(false);
@@ -274,6 +278,17 @@ export default function CentralApp() {
         return;
       }
       if (bat && uuidShort16(bat.level) === chShort) {
+        const notifiedService =
+          typeof (e as { service?: unknown }).service === 'string'
+            ? (e as { service: string }).service
+            : '';
+        if (
+          batteryServiceRef.current &&
+          notifiedService &&
+          !sameGattUuid(notifiedService, batteryServiceRef.current)
+        ) {
+          return;
+        }
         const v = valueToBytes(e.value)[0] ?? 0;
         setBatteryLine(`${v}%`);
         addLog('data', `Notify battery: ${v}%`);
@@ -295,6 +310,7 @@ export default function CentralApp() {
       setLedLit(false);
       setHrBpm(null);
       setBatteryLine('--');
+      batteryServiceRef.current = null;
       setButtonLine('--');
       setDeviceInfoExpanded(false);
       setDeviceInfoRows(null);
@@ -393,11 +409,57 @@ export default function CentralApp() {
     }
   }, [addLog, clearScanFallbackTimer, targetId]);
 
+  const subscribeBattery = useCallback(
+    async (peripheralId: string, info: DiscoveredGatt) => {
+      const attempts = gattAccessAttempts(info, '180F', '2A19');
+      if (attempts.length === 0) {
+        batteryServiceRef.current = null;
+        addLog(
+          'error',
+          'Battery service was not discovered (looked for the Apple alias and 180F)'
+        );
+        return;
+      }
+      let subscribed: (typeof attempts)[number] | null = null;
+      let lastError: unknown;
+      for (const pair of attempts) {
+        try {
+          await BleManager.startNotification(
+            peripheralId,
+            pair.service,
+            pair.characteristic
+          );
+          subscribed = pair;
+          break;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      if (!subscribed) {
+        batteryServiceRef.current = null;
+        addLog('error', `Battery notify failed: ${lastError}`);
+        return;
+      }
+      batteryServiceRef.current = subscribed.service;
+      addLog('info', `Subscribed: battery ${subscribed.service}`);
+      try {
+        const batBytes = await BleManager.read(
+          peripheralId,
+          subscribed.service,
+          subscribed.characteristic
+        );
+        setBatteryLine(`${batBytes[0] ?? 0}%`);
+      } catch {
+        /* notify may still arrive */
+      }
+    },
+    [addLog]
+  );
+
   const setupHeart = useCallback(
     async (peripheralId: string) => {
       const hr = DEMO_TARGETS['heart-rate-monitor'].services.heartRate!;
-      const bat = DEMO_TARGETS['heart-rate-monitor'].services.battery!;
-      await BleManager.retrieveServices(peripheralId);
+      const info = await BleManager.retrieveServices(peripheralId);
       addLog('info', 'Services discovered');
       try {
         await BleManager.startNotification(
@@ -413,54 +475,24 @@ export default function CentralApp() {
           throw e;
         }
       }
-      await BleManager.startNotification(
-        peripheralId,
-        bat.service,
-        bat.level
-      );
-      try {
-        const batBytes = await BleManager.read(
-          peripheralId,
-          bat.service,
-          bat.level
-        );
-        setBatteryLine(`${batBytes[0] ?? 0}% (read)`);
-      } catch {
-        /* optional */
-      }
+      await subscribeBattery(peripheralId, info);
       addLog('info', 'Subscribed: HR + battery notifications');
     },
-    [addLog]
+    [addLog, subscribeBattery]
   );
 
   const setupNordic = useCallback(
     async (peripheralId: string) => {
       const lbs = DEMO_TARGETS['nordic-lbs'].services.lbs!;
-      const bat = DEMO_TARGETS['nordic-lbs'].services.battery!;
       const peripheralInfo = await BleManager.retrieveServices(peripheralId);
-      addLog('info', 'Services discovered: ' + JSON.stringify({peripheralInfo, lbs, bat}));
+      addLog('info', 'Services discovered: ' + JSON.stringify({peripheralInfo, lbs}));
       await BleManager.startNotification(
         peripheralId,
         lbs.service,
         lbs.button
       );
       addLog('info', `Subscribed: button notification: ${lbs.button}`);
-      await BleManager.startNotification(
-        peripheralId,
-        bat.service,
-        bat.level
-      );
-      addLog('info', `Subscribed: battery notification: ${bat.level}`);
-      try {
-        const batBytes = await BleManager.read(
-          peripheralId,
-          bat.service,
-          bat.level
-        );
-        setBatteryLine(`${batBytes[0] ?? 0}%`);
-      } catch {
-        /* optional */
-      }
+      await subscribeBattery(peripheralId, peripheralInfo);
       try {
         const btnBytes = await BleManager.read(
           peripheralId,
@@ -483,7 +515,7 @@ export default function CentralApp() {
       }
       addLog('info', 'Subscribed: button + battery notifications');
     },
-    [addLog]
+    [addLog, subscribeBattery]
   );
 
   const handleConnect = useCallback(
@@ -535,6 +567,7 @@ export default function CentralApp() {
       setConnected(null);
       setHrBpm(null);
       setBatteryLine('--');
+      batteryServiceRef.current = null;
       setButtonLine('--');
       setDeviceInfoExpanded(false);
       setDeviceInfoRows(null);

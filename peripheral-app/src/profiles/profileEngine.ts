@@ -15,6 +15,7 @@
  *   - Provide callbacks for UI synchronisation
  */
 
+import { Platform } from 'react-native';
 import {
   setName,
   startAdvertising,
@@ -33,6 +34,10 @@ import {
   ATTError,
   base64StringToDecimal,
 } from 'rn-ble-peripheral-module';
+import {
+  applePublishedServiceUuid,
+  isApplePeripheralHost,
+} from '../../../shared/appleGattProvisioning';
 
 import type {
   BleProfile,
@@ -262,6 +267,7 @@ export class ProfileEngine {
       // Service must be created first -- native code stores it in a map
       // that addCharacteristicToService looks up by UUID.
       addService(svcUUID, service.primary !== false);
+      this.noteAppleProvisioning(svcUUID, service.name || svcUUID);
 
       for (const char of service.characteristics) {
         const props = resolveProperties(char.properties);
@@ -302,6 +308,7 @@ export class ProfileEngine {
     const charMap = new Map<string, CharacteristicRuntimeState>();
 
     addService(DIS_SERVICE_UUID, true);
+    this.noteAppleProvisioning(DIS_SERVICE_UUID, 'Device Information');
 
     for (const [field, charUUID] of Object.entries(DIS_FIELD_MAP)) {
       const value =
@@ -685,6 +692,23 @@ export class ProfileEngine {
     const currentStateId = this.stateMachineRunner.getCurrentState();
     const override = state.definition.stateOverrides?.[currentStateId];
     return override?.simulation || state.definition.simulation || undefined;
+  }
+
+  /**
+   * On iOS and macOS the native module publishes Battery and Device
+   * Information on a vendor UUID. Profiles keep the SIG UUID.
+   */
+  private noteAppleProvisioning(uuid: string, label: string): void {
+    if (!isApplePeripheralHost(Platform.OS)) {
+      return;
+    }
+    const alias = applePublishedServiceUuid(uuid);
+    if (!alias) {
+      return;
+    }
+    this.callbacks.onLog(
+      `${label}: iOS/macOS owns ${uuid}, publishing ${alias} so the host device does not replace these values`
+    );
   }
 
   private deriveServiceUUIDs(profile: BleProfile): string[] {

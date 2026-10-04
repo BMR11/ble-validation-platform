@@ -70,6 +70,10 @@ Ensure Bluetooth permissions are granted when prompted.
 yarn start
 ```
 
+## Apple peripherals
+
+If the peripheral is an iPhone, iPad, or Mac, Battery and Device Information are not on `180F` / `180A` (the OS owns those). After connect, this app uses the vendor alias from [docs/apple-peripheral.md](../docs/apple-peripheral.md). Android peripherals still use the standard UUIDs.
+
 ## Tests
 
 ```bash

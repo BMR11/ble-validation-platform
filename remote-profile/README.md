@@ -91,7 +91,7 @@ The builder is split into **Device**, **State machine**, and **Services**. A ser
 
 Order in the builder is the order stored in JSON:
 
-- **Services** are registered in list order. If `advertising.serviceUUIDs` is omitted, the engine builds that list from the services (and Device Information, when `deviceInfo` is set) and advertises only the first UUID.
+- **Services** are registered in list order. If `advertising.serviceUUIDs` is omitted, the engine builds that list from the services (and Device Information, when `deviceInfo` is set) and advertises only the first UUID. Profiles keep Battery `180F` and Device Information `180A`. On iOS and macOS the peripheral publishes those two services on a vendor UUID so the OS does not replace them. See [docs/apple-peripheral.md](../docs/apple-peripheral.md).
 - **Characteristics** are registered in list order. Centrals address them by UUID, so order does not change which characteristic is used.
 - **States** keep list order in the JSON object. The start state is the **Start state** field, not whichever card is first.
 - **Transitions** are checked in list order. The first matching transition wins.

@@ -13,7 +13,7 @@ Profiles are JSON documents consumed by the peripheral **`ProfileEngine`** (see 
 | `advertising.localName` | yes | GAP name used when advertising. |
 | `advertising.deviceName` | no | Optional adapter/device name where supported. |
 | `advertising.serviceUUIDs` | no | UUIDs considered for advertising. When omitted, derived from `services` in array order (+ DIS if `deviceInfo` is present). The engine advertises only the first UUID in that list. |
-| `deviceInfo` | no | Shorthand for standard **Device Information Service** (0x180A). |
+| `deviceInfo` | no | Shorthand for standard **Device Information Service** (0x180A). On iOS and macOS the native host publishes this, and Battery `180F`, on a vendor UUID so the OS does not replace the values. Profiles still say `180A` / `180F`. See [apple-peripheral.md](./apple-peripheral.md). |
 | `stateMachine` | no | Idle/active/error style flows; transitions on subscribe, unsubscribe, write, timer, manual. |
 | `services` | yes | List of GATT services and characteristics. |
 
