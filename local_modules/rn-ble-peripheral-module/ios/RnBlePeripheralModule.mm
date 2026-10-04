@@ -120,6 +120,14 @@ RCT_EXPORT_MODULE(RnBlePeripheralModule)
     [_swiftHost stop];
 }
 
+- (void)registerBroadcastReceiver:(NSArray *)actions
+{
+}
+
+- (void)unregisterBroadcastReceiver
+{
+}
+
 - (void)sendNotificationToDevices:(NSString *)serviceUUID
                characteristicUUID:(NSString *)characteristicUUID
                              data:(NSString *)data {

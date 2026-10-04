@@ -5,6 +5,8 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
+    "macos": "react-native run-macos",
+    "pods:macos": "cd macos && pod install",
     "start": "react-native start",
     "typecheck": "tsc --noEmit",
     "build:android": "react-native build-android --extra-params \"--no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a\"",
@@ -14,6 +16,7 @@
   "dependencies": {
     "react": "19.0.0",
     "react-native": "0.79.2",
+    "react-native-macos": "0.79.4",
     "rn-ble-peripheral-module": "file:../local_modules/rn-ble-peripheral-module"
   },
   "devDependencies": {
